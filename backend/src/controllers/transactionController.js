@@ -108,7 +108,7 @@ exports.getFilters = async (req, res) => {
 
 
 
-export const updateTransaction = async (req, res) => {
+exports.updateTransaction = async (req, res) => {
     try {
         const userId = req.userId;
         const txnId = req.params.id;
@@ -127,7 +127,7 @@ export const updateTransaction = async (req, res) => {
     }
 };
 
-export const deleteTransaction = async (req, res) => {
+exports.deleteTransaction = async (req, res) => {
     try {
         const userId = req.userId;
         const txnId = req.params.id;

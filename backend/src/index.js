@@ -29,6 +29,7 @@ app.use("/api/transactions", txnRoutes);
 app.use("/api/budgets", budgetRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/dashboard", analyticsRoutes);
+app.use("/api/goals", analyticsRoutes);
 
 app.get("/", (req, res) => {
     res.send("Finance Tracker API is running...");

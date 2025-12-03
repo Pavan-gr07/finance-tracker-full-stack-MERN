@@ -1,6 +1,6 @@
 const Transaction = require('../models/transactionModel');
 
-export const analyticsController = async (req, res) => {
+exports.analyticsController = async (req, res) => {
   try {
     const userId = new mongoose.Types.ObjectId(req.userId);
 

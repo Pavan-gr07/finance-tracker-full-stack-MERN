@@ -1,0 +1,225 @@
+Auto-attach income to goals
+
+Visual progress bar API
+
+Goal history (ledger) table
+
+Worker that checks deadlines & sends notifications
+
+Notifications UI API (unread, read, mark read)
+
+Category Master API
+
+Full search API (smart search for dashboard)
+
+Attach goals to transactions automatically
+
+Send reminder notifications when deadline near
+
+Goal Tracking module
+
+Budgets Monthly Progress API
+
+Realtime Notifications (WebSockets)
+
+Category Master API
+
+Upload receipts (S3 + Mongo)
+
+Great — next implementation.
+But before I start writing code, I need **exactly what feature you want to build next**.
+
+Here are the **recommended next steps** you can choose from — reply with the number:
+
+---
+
+# 🚀 **Next Possible Implementations (Pick one)**
+
+### **1️⃣ Add JWT Auth Middleware**
+
+* Login returns token
+* `req.userId` is automatically set
+* You don’t need to pass userId manually in body
+* Cleaner + secure
+
+---
+
+### **2️⃣ Build Transaction APIs Fully**
+
+* Add GET all
+* Add GET monthly
+* Add GET by category
+* Add DELETE
+* Add UPDATE
+
+---
+
+### **3️⃣ Build Dashboard API (Most useful)**
+
+Returns in one API call:
+
+* Total income
+* Total expense
+* Monthly summary
+* Category-wise summary
+* Next budgets risk level
+
+---
+
+### **4️⃣ Build Goals Module**
+
+* Goal amount
+* Target date
+* Progress %
+* Automatic updates from transactions
+
+---
+
+### **5️⃣ Add Notifications Fetch API**
+
+* User sees notifications
+* Mark as read
+* Show unread count
+* Clear old notifications
+
+---
+
+### **6️⃣ Add Category Master**
+
+* Static categories
+* Custom categories
+* Icons, colors
+
+---
+
+### **7️⃣ Add Rate Limiting (Redis)**
+
+* Limit login attempts
+* Limit requests per minute
+* Prevent abuse
+
+---
+
+### **8️⃣ Add OneSignal / FCM Push Notifications**
+
+* Mobile notifications for crossing budget
+* Works for Flutter app later
+
+---
+
+### **9️⃣ Add Swagger API Docs**
+
+* Full API documentation
+* Auto docs for frontend team
+
+---
+
+# 🧠 Tell me the number (1–9)
+
+Example:
+👉 "Let's do 1"
+👉 "I want Dashboard API"
+👉 "Next build Goals module"
+
+I will then implement the complete feature with:
+
+* Routes
+* Controllers
+* Models (if needed)
+* Worker logic (if needed)
+* Testing examples
+
+Just reply with the number.
+
+
+
+🧭 What You Should Do Next (Basic Stage)
+
+These are small additions that don’t complicate the system:
+
+1. Basic Categories List API
+
+A static list for now.
+
+2. Settings (change name/email/password)
+3. Profile API
+4. Simple Analytics (weekly summary)
+5. Pagination for transactions
+
+All small, simple, clean → you can handle easily.
+
+
+What You Can Ignore For Now
+
+Don’t think about:
+
+WebSockets
+
+Cron jobs
+
+FCM / push notifications
+
+Heavy chart APIs
+
+Payment integration
+
+Kafka / RabbitMQ
+
+Microservices
+
+Docker scaling
+
+Distributed workers
+
+Load balancers
+
+S3 / CloudFront
+
+Take your time and understand flow FIRST.
+
+
+
+When You’re Ready Later
+
+I will help you add:
+
+Realtime notifications
+
+Automatic monthly budget reset
+
+Goal deadline reminders
+
+Email sending
+
+Flutter app connection
+
+Caching
+
+S3 uploads
+
+Rate limiting
+
+Advanced data analytics
+
+But only when you say you’re ready.
+
+
+For now
+
+Tell me exactly what small feature you want next:
+
+Options:
+
+Category list API
+
+Weekly summary
+
+Profile update API
+
+Pagination for all GET APIs
+
+Simple settings (change password)
+
+Add notes & tags to transactions
+
+ 
