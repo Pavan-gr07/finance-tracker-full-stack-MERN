@@ -1,0 +1,27 @@
+{
+  "name": "finance-tracker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "frontend": "cd frontend && npm run dev",
+    "backend": "cd backend && node index.js",
+    "dev": "concurrently \"npm run frontend\" \"npm run backend\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pavan-gr07/finance-tracker-full-stack-MERN.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Pavan-gr07/finance-tracker-full-stack-MERN/issues"
+  },
+  "homepage": "https://github.com/Pavan-gr07/finance-tracker-full-stack-MERN#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
