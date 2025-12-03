@@ -1,0 +1,154 @@
+Perfect — let's build a **single Transaction Filter API** that accepts **multiple optional filters** and returns results based on whatever parameters you pass.
+
+Clean, short, production-ready code.
+
+---
+
+# ✅ Goal
+
+One API:
+
+```
+GET /api/transactions/filter
+```
+
+With optional query params:
+
+* `type` → income / expense
+* `category`
+* `minAmount`
+* `maxAmount`
+* `startDate`
+* `endDate`
+* `search` → search in notes
+* `limit`
+* `page`
+
+Only filters that are passed will be applied.
+
+---
+
+# ✅ Step 1 — Add the route
+
+📁 `src/routes/transactionRoutes.js`
+
+```js
+const router = require("express").Router();
+const auth = require("../middleware/auth");
+const Transaction = require("../models/Transaction");
+
+// GET /filter (single dynamic API)
+router.get("/filter", auth, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const {
+      type,
+      category,
+      minAmount,
+      maxAmount,
+      startDate,
+      endDate,
+      search,
+      page = 1,
+      limit = 20,
+    } = req.query;
+
+    const filter = { userId };
+
+    if (type) filter.type = type;
+    if (category) filter.category = category;
+    if (minAmount) filter.amount = { ...filter.amount, $gte: Number(minAmount) };
+    if (maxAmount) filter.amount = { ...filter.amount, $lte: Number(maxAmount) };
+    if (startDate) filter.date = { ...filter.date, $gte: new Date(startDate) };
+    if (endDate) filter.date = { ...filter.date, $lte: new Date(endDate) };
+
+    if (search) {
+      filter.notes = { $regex: search, $options: "i" };
+    }
+
+    const skip = (page - 1) * limit;
+
+    const transactions = await Transaction.find(filter)
+      .sort({ date: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+
+    res.json({ count: transactions.length, transactions });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+module.exports = router;
+```
+
+---
+
+# 🚀 Usage Examples
+
+## 📌 1. Filter by type
+
+```
+GET /api/transactions/filter?type=expense
+```
+
+## 📌 2. Filter by category
+
+```
+GET /api/transactions/filter?category=Food
+```
+
+## 📌 3. Filter by amount range
+
+```
+GET /api/transactions/filter?minAmount=500&maxAmount=5000
+```
+
+## 📌 4. Filter by date range
+
+```
+GET /api/transactions/filter?startDate=2025-01-01&endDate=2025-02-01
+```
+
+## 📌 5. Search by notes
+
+```
+GET /api/transactions/filter?search=dinner
+```
+
+## 📌 6. Pagination
+
+```
+GET /api/transactions/filter?page=2&limit=10
+```
+
+## 📌 Combine everything
+
+```
+GET /api/transactions/filter?type=expense&category=Food&minAmount=100&maxAmount=2000&search=lunch
+```
+
+---
+
+# 🔥 This will give you:
+
+✔ Single API handling all filters
+✔ Smart dynamic query building
+✔ Pagination
+✔ Works with JWT (req.userId auto added)
+✔ Clean, optimized query
+✔ Perfect for UI filters
+✔ No need to send userId manually
+
+---
+
+If you want next:
+
+👉 **Add sorting (amount high-low / date newest-oldest)**
+OR
+👉 **Create Monthly Summary API**
+OR
+👉 **Create Dashboard API**
+
+Tell me which one.
