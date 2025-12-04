@@ -14,12 +14,12 @@ exports.create = async (req, res) => {
 
         // Push job
         // Wrap in try/catch or handle specifically if job failure shouldn't block response
-        try {
-            await addBudgetJob(txn);
-        } catch (jobError) {
-            console.error('Budget Job Error:', jobError);
-            // Optional: decide if you want to return an error or just log it
-        }
+        // try {
+        //     await addBudgetJob(txn);
+        // } catch (jobError) {
+        //     console.error('Budget Job Error:', jobError);
+        //     // Optional: decide if you want to return an error or just log it
+        // }
 
         res.status(201).json({ txn });
     } catch (err) {
@@ -33,7 +33,8 @@ exports.create = async (req, res) => {
 
 exports.list = async (req, res) => {
     try {
-        const { userId, from, to } = req.query;
+        const { from, to } = req.query;
+        const userId = req.userId;
 
         if (!userId) {
             return res.status(400).json({ error: 'userId is required' });
@@ -55,7 +56,7 @@ exports.list = async (req, res) => {
             }
         }
 
-        const txns = await Transaction.find(query).sort({ date: -1 }).limit(200);
+        const txns = await Transaction.find({ userId }).sort({ date: -1 }).limit(200);
         res.json({ txns });
     } catch (err) {
         console.error('List Transactions Error:', err);

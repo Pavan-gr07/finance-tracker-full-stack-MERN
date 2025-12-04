@@ -1,9 +1,8 @@
 const Transaction = require('../models/transactionModel');
 
 exports.analyticsController = async (req, res) => {
-  console.log("first------------------")
   try {
-    const userId = new mongoose.Types.ObjectId(req.userId);
+    const userId = req.userId;
 
     // 1️⃣ SUMMARY: total income & expense
     const summary = await Transaction.aggregate([

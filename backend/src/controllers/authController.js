@@ -34,8 +34,20 @@ exports.login = async (req, res) => {
 
         const token = generateToken(user);
 
-        res.json({ user, token });
+        res.cookie("finance_token", token, {
+            httpOnly: true,
+            secure: false,  // true on HTTPS
+            sameSite: "lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+        res.json({ user });
+
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
+};
+
+exports.logout = async (req, res) => {
+    res.clearCookie("finance_token");
+    res.json({ message: "Logged out" });
 };
