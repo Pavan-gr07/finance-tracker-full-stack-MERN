@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const userSchema = new mongoose.Schema({
     name: { type: String },
     email: { type: String, required: true, unique: true },
-    passwordHash: { type: String, required: true },
+    password: { type: String, required: true },
     settings: {
         currency: { type: String, default: 'INR' },
         timezone: { type: String, default: 'Asia/Kolkata' },
@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema({
 
 
 userSchema.methods.verifyPassword = function (password) {
-    return bcrypt.compare(password, this.passwordHash);
+    return bcrypt.compare(password, this.password);
 };
 
 

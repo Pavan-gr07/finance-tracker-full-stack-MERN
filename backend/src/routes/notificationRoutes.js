@@ -5,10 +5,10 @@ const auth = require("../middleware/auth");
 
 
 router.get('/', auth, list);
-router.post('/mark-read', auth, markRead);
-router.post('/unread', auth, markRead);
-router.post('/read', auth, read);
-router.post('/unread/count', auth, unreadCount);
+router.get('/mark-read', auth, markRead);
+router.get('/unread', auth, markRead);
+router.get('/read', auth, read);
+router.get('/unread/count', auth, unreadCount);
 
 
 

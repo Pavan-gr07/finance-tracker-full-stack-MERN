@@ -17,3 +17,5 @@ router.patch('/:id', auth, updateSingleGoal);
 router.delete('/:id', auth, deleteSingleGoal);
 router.patch('/:id/add-progress', auth, addprogressToGoal);
 router.patch("/summary", auth, goalSummary);
+
+module.exports = router;

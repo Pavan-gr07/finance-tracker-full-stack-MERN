@@ -8,6 +8,7 @@ const txnRoutes = require("./routes/transactionRoutes");
 const budgetRoutes = require("./routes/budgetRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const goalRoutes = require("./routes/goalRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -29,7 +30,7 @@ app.use("/api/transactions", txnRoutes);
 app.use("/api/budgets", budgetRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/dashboard", analyticsRoutes);
-app.use("/api/goals", analyticsRoutes);
+app.use("/api/goals", goalRoutes);
 
 app.get("/", (req, res) => {
     res.send("Finance Tracker API is running...");

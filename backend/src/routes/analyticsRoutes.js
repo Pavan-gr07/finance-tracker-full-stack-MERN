@@ -4,7 +4,7 @@ const { analyticsController } = require('../controllers/analyticsController');
 const auth = require('../middleware/auth');
 
 
-router.post('/', auth, analyticsController);
+router.get('/', auth, analyticsController);
 
 
 module.exports = router;

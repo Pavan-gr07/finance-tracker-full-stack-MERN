@@ -2,7 +2,7 @@ const Notification = require('../models/notificationModel');
 
 exports.list = async (req, res) => {
     try {
-        const { userId } = req.query;
+        const userId = req.userId;
         if (!userId) {
             return res.status(400).json({ error: 'userId is required' });
         }
