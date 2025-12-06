@@ -14,12 +14,11 @@ exports.create = async (req, res) => {
 
         // Push job
         // Wrap in try/catch or handle specifically if job failure shouldn't block response
-        // try {
-        //     await addBudgetJob(txn);
-        // } catch (jobError) {
-        //     console.error('Budget Job Error:', jobError);
-        //     // Optional: decide if you want to return an error or just log it
-        // }
+        try {
+            await addBudgetJob(txn);
+        } catch (jobError) {
+            console.error('Budget Job Error:', jobError);
+        }
 
         res.status(201).json({ txn });
     } catch (err) {
