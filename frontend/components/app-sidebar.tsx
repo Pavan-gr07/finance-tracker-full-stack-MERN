@@ -1,21 +1,15 @@
 import {
-    Bell,
-    Calendar,
-    Home,
-    Inbox,
-    Search,
-    Settings,
-    Target,
-    Wallet,
-    Command // Using a logo icon helps the collapsed state look better
+    Command, // Using a logo icon helps the collapsed state look better
+    User2,
+    ChevronUp
 } from "lucide-react"
 
 import {
     Sidebar,
     SidebarContent,
+    SidebarFooter,
     SidebarGroup,
     SidebarGroupContent,
-    SidebarGroupLabel,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
@@ -23,15 +17,8 @@ import {
 } from "@/components/ui/sidebar"
 import Link from "next/link"
 import { SidebarMenuItems } from "./sidebar-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu"
 
-// Menu items.
-const items = [
-    { title: "Dashboard", url: "/dashboard", icon: Home },
-    { title: "Transactions", url: "/transactions", icon: Wallet },
-    { title: "Goals", url: "/goals", icon: Target },
-    { title: "Notifications", url: "/notifications", icon: Bell },
-    { title: "Profile Settings", url: "/profile", icon: Settings },
-]
 
 export function AppSidebar() {
     return (
@@ -60,6 +47,34 @@ export function AppSidebar() {
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
+            <SidebarFooter>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <SidebarMenuButton>
+                                    <User2 /> Username
+                                    <ChevronUp className="ml-auto" />
+                                </SidebarMenuButton>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                side="top"
+                                className="w-[--radix-popper-anchor-width]"
+                            >
+                                <DropdownMenuItem>
+                                    <span>Account</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                    <span>Billing</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                    <span>Sign out</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarFooter>
             {/* Footer removed because User Menu is moving to Navbar */}
         </Sidebar>
     )

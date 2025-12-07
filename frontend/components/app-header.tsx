@@ -19,10 +19,14 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useRouter } from "next/navigation";
 import { AppSidebar } from "./app-sidebar";
 import { SidebarMenuItems } from "./sidebar-menu";
+import { logout } from "@/utils/auth";
 
 export function AppHeader() {
     const router = useRouter();
-
+    const handleLogout = () => {
+        logout();
+        router.push("/login"); // redirect user
+    };
     return (
         <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 w-full">
             {/* Desktop Sidebar Trigger */}
@@ -102,7 +106,7 @@ export function AppHeader() {
                         <DropdownMenuItem>Settings</DropdownMenuItem>
                         <DropdownMenuItem>Billing</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-500 font-medium focus:text-red-500">
+                        <DropdownMenuItem className="text-red-500 font-medium focus:text-red-500" onClick={handleLogout}>
                             Log out
                         </DropdownMenuItem>
                     </DropdownMenuContent>

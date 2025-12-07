@@ -1,4 +1,4 @@
-import Dashboard from "@/pages/dashboard_page";
+import Dashboard from "@/screens/dashboard_page";
 
 export default function DashboardPage() {
     return (

@@ -1,4 +1,4 @@
-import Goals from "@/pages/goals-page";
+import Goals from "@/screens/goals-page";
 
 export default function GoalsPage() {
     return (

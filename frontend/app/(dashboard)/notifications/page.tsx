@@ -1,4 +1,4 @@
-import Notification from "@/pages/notification-page";
+import Notification from "@/screens/notification-page";
 
 export default function NotificationPage() {
     return (
