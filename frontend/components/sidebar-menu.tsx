@@ -13,7 +13,7 @@ import { usePathname } from "next/navigation"
 const items = [
     { title: "Dashboard", url: "/dashboard", icon: Home },
     { title: "Transactions", url: "/transactions", icon: Wallet },
-    { title: "Goals", url: "/goals", icon: Target },
+    { title: "Budget & Goals", url: "/goals", icon: Target },
     { title: "Notifications", url: "/notifications", icon: Bell },
     { title: "Profile Settings", url: "/profile", icon: Settings },
 ];

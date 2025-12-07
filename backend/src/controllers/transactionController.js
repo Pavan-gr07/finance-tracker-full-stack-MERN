@@ -10,8 +10,48 @@ exports.create = async (req, res) => {
             return res.status(400).json({ error: 'userId and amount are required' });
         }
 
-        const txn = await Transaction.create(payload);
+        // Logic to handle "Next Run Date" if recurring
+        let recurringConfig = null;
+        if (payload.recurring?.frequency) {
+            const nextDate = new Date(payload.date);
+            // If they say "Start Monthly from today", the next one is next month
+            switch (payload.recurring.frequency) {
+                case 'daily':
+                    // Add 1 Day
+                    nextDate.setDate(nextDate.getDate() + 1);
+                    break;
 
+                case 'weekly':
+                    // Add 7 Days
+                    nextDate.setDate(nextDate.getDate() + 7);
+                    break;
+
+                case 'monthly':
+                    // Add 1 Month
+                    nextDate.setMonth(nextDate.getMonth() + 1);
+                    break;
+
+                case 'yearly':
+                    // Add 1 Year
+                    nextDate.setFullYear(nextDate.getFullYear() + 1);
+                    break;
+
+                default:
+                    // Fallback: If no valid frequency, don't set a next date
+                    nextDate = null;
+            }
+            recurringConfig = {
+                frequency: payload.recurring.frequency,
+                nextRunDate: nextDate,
+                isActive: true
+            };
+        }
+
+        const txn = await Transaction.create({
+            ...payload,
+            isRecurring: !!payload.recurring,
+            recurringConfig
+        });
         // Push job
         // Wrap in try/catch or handle specifically if job failure shouldn't block response
         try {

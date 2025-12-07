@@ -12,7 +12,7 @@ exports.create = async (req, res) => {
 
 
 exports.list = async (req, res) => {
-    const { userId } = req.query;
+    const { userId } = req.userId;
     const budgets = await Budget.find({ userId });
     res.json({ budgets });
 };
