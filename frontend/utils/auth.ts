@@ -2,7 +2,7 @@
 
 export function logout() {
     // Remove the token
-    document.cookie = "token=; Max-Age=0; path=/";
+    document.cookie = "finance_token=; Max-Age=0; path=/";
 
     // Optional: clear other data
     localStorage.clear();

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AuthService } from "@/services/auth-service";
+import { toast } from "sonner";
 
 export default function RegisterScreen() {
     const router = useRouter();
@@ -19,19 +21,27 @@ export default function RegisterScreen() {
     const handleChange = (e: any) =>
         setForm({ ...form, [e.target.name]: e.target.value });
 
-    const handleRegister = (e: React.FormEvent) => {
+    const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (form.password !== form.confirm) {
             setError("Passwords do not match.");
             return;
         }
+        try {
+            await AuthService.register({
+                name: form.name,
+                email: form.email,
+                password: form.password,
+            });
+            // 2. Success
+            toast.success(`Account created successfully!`);
+        } catch (error) {
+            setError("Registration failed. Please try again.");
+            return;
+        }
 
-        // Dummy token for registration
-        const token = "dummytoken123";
-
-        document.cookie = `token=${token}; path=/;`;
-        router.push("/dashboard");
+        router.push("/login");
     };
 
     return (

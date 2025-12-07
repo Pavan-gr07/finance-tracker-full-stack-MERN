@@ -3,44 +3,39 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { jwtDecode } from "jwt-decode";
 import Image from "next/image";
+import { isValidToken } from "@/utils/auth";
+import { toast } from "sonner";
+import { AuthService } from "@/services/auth-service";
 
 export default function LoginScreen() {
     const router = useRouter();
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [formData, setFormData] = useState({ email: "", password: "" });
 
-    const isValidToken = (token: string) => {
-        try {
-            const decoded: any = jwtDecode(token);
-            // return decoded.exp > Date.now() / 1000;
-            return true;
-        } catch {
-            return false;
-        }
-    };
 
-    const handleLogin = (e: React.FormEvent) => {
+
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        setLoading(true);
 
-        // TODO: Replace with real API
-        const dummyToken =
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
-            "eyJpZCI6MSwiZXhwIjoxNzAwMDAwMDAwfQ." +
-            "dummy-signature";
+        try {
+            // 1. Call API
+            // The Backend sets the 'Set-Cookie' header here automatically.
+            await AuthService.login(formData);
 
-        if (!isValidToken(dummyToken)) {
-            alert("Invalid or expired token!");
-            return;
+            // 2. Success
+            toast.success(`Welcome back!`); // Result might not have name depending on your API
+
+            // 3. Navigate
+            router.push("/dashboard");
+
+        } catch (error: any) {
+            toast.error(error.message || "Invalid credentials");
+        } finally {
+            setLoading(false);
         }
-
-        // store SESSION cookie (clears on browser close)
-        document.cookie = `token=${dummyToken}; path=/;`;
-
-        router.push("/dashboard");
     };
-
     return (
         <div className="w-full max-w-md p-8 border border-border rounded-xl shadow-md bg-card">
             <h1 className="text-3xl font-bold mb-2 text-center">Welcome Back</h1>
@@ -55,8 +50,8 @@ export default function LoginScreen() {
                         type="email"
                         className="w-full p-3 border rounded-md bg-background"
                         placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={formData?.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         required
                     />
                 </div>
@@ -67,14 +62,14 @@ export default function LoginScreen() {
                         type="password"
                         className="w-full p-3 border rounded-md bg-background"
                         placeholder="•••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        value={formData?.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                         required
                     />
                 </div>
 
-                <button className="w-full py-2.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition">
-                    Login
+                <button className="w-full py-2.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition" type="submit" disabled={loading}>
+                    {loading ? "Signing in..." : "Login"}
                 </button>
             </form>
 

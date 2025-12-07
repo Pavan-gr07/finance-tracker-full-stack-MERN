@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import {
     Search,
     Filter,
@@ -11,8 +11,9 @@ import {
     TrendingDown,
     Wallet,
     Calendar as CalendarIcon,
-    X
+    Loader2
 } from "lucide-react";
+import { toast } from "sonner"; // Assuming you have sonner installed for notifications
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,11 +39,13 @@ import {
 
 import AddEditTransactionModal from "./AddEditTransactionModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
+import { TransactionService } from "@/services/transaction-service";
 import type { Transaction } from "@/types/transaction";
 
 export default function TransactionsScreen() {
     // State
     const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState<string>("");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
@@ -54,19 +57,34 @@ export default function TransactionsScreen() {
     const [currentTxn, setCurrentTxn] = useState<Transaction | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
-    // Initial Data Load
-    useEffect(() => {
-        const dummy: Transaction[] = [
-            { _id: "1", amount: 1200, currency: "INR", type: "expense", category: "Food", date: "2024-12-12", notes: "Lunch with friends" },
-            { _id: "2", amount: 95000, currency: "INR", type: "income", category: "Salary", date: "2024-12-10", notes: "December Salary" },
-            { _id: "3", amount: 450, currency: "INR", type: "expense", category: "Transport", date: "2024-12-11", notes: "Uber ride" },
-            { _id: "4", amount: 2000, currency: "INR", type: "expense", category: "Shopping", date: "2024-12-09", notes: "Winter jacket" },
-        ];
-        setTransactions(dummy);
+    // --- API: FETCH DATA ---
+    const fetchData = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            // In a real app, you might pass sort/filter params directly to the API
+            // e.g. TransactionService.getAll({ type: typeFilter })
+            const data = await TransactionService.getAll();
+            setTransactions(data?.txns);
+        } catch (error) {
+            console.error("Failed to fetch transactions", error);
+            toast.error("Could not load transactions");
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
 
-    // 🧠 Derived State (Filtering & Sorting)
+    // Initial Load
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    // 🧠 Derived State (Filtering & Sorting Client-Side)
+    // Note: For large datasets, move filtering/sorting to the Backend API
     const filteredAndSortedTransactions = useMemo(() => {
+
+        if (!Array.isArray(transactions)) {
+            return [];
+        }
         let result = [...transactions];
 
         // 1. Text Search
@@ -94,9 +112,16 @@ export default function TransactionsScreen() {
     }, [transactions, search, typeFilter, sortOrder]);
 
     // 📊 Stats Calculation
+    // 📊 Stats Calculation
     const stats = useMemo(() => {
+        // FIX: Return an object with zeros, NOT an empty array
+        if (!Array.isArray(transactions)) {
+            return { income: 0, expense: 0, balance: 0 };
+        }
+
         const income = transactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
         const expense = transactions.filter(t => t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
+
         return { income, expense, balance: income - expense };
     }, [transactions]);
 
@@ -122,8 +147,8 @@ export default function TransactionsScreen() {
                         <Wallet className="h-4 w-4 text-blue-600" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">₹{stats.balance.toLocaleString()}</div>
-                        <p className="text-xs text-muted-foreground mt-1">+20.1% from last month</p>
+                        <div className="text-2xl font-bold">₹{stats?.balance?.toLocaleString()}</div>
+                        <p className="text-xs text-muted-foreground mt-1">Based on current view</p>
                     </CardContent>
                 </Card>
                 <Card className="bg-gradient-to-br from-green-50 to-white dark:from-emerald-950/20 dark:to-slate-950 border-green-100 dark:border-emerald-900/50">
@@ -132,8 +157,8 @@ export default function TransactionsScreen() {
                         <TrendingUp className="h-4 w-4 text-emerald-600" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-emerald-600">₹{stats.income.toLocaleString()}</div>
-                        <p className="text-xs text-muted-foreground mt-1">4 transactions</p>
+                        <div className="text-2xl font-bold text-emerald-600">₹{stats?.income.toLocaleString()}</div>
+                        <p className="text-xs text-muted-foreground mt-1">{transactions?.filter(t => t.type === 'income').length} transactions</p>
                     </CardContent>
                 </Card>
                 <Card className="bg-gradient-to-br from-red-50 to-white dark:from-rose-950/20 dark:to-slate-950 border-red-100 dark:border-rose-900/50">
@@ -142,8 +167,8 @@ export default function TransactionsScreen() {
                         <TrendingDown className="h-4 w-4 text-rose-600" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-rose-600">₹{stats.expense.toLocaleString()}</div>
-                        <p className="text-xs text-muted-foreground mt-1">12 transactions</p>
+                        <div className="text-2xl font-bold text-rose-600">₹{stats?.expense.toLocaleString()}</div>
+                        <p className="text-xs text-muted-foreground mt-1">{transactions.filter(t => t.type === 'expense').length} transactions</p>
                     </CardContent>
                 </Card>
             </div>
@@ -248,7 +273,15 @@ export default function TransactionsScreen() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredAndSortedTransactions.length > 0 ? (
+                        {isLoading ? (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-32 text-center">
+                                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                                        <Loader2 className="h-5 w-5 animate-spin" /> Loading transactions...
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ) : filteredAndSortedTransactions.length > 0 ? (
                             filteredAndSortedTransactions.map((txn) => (
                                 <TableRow key={txn._id} className="group hover:bg-muted/50 transition-colors">
                                     <TableCell className="font-medium text-muted-foreground">
@@ -337,17 +370,19 @@ export default function TransactionsScreen() {
                 </Table>
             </Card>
 
-            {/* MODALS REMAINS THE SAME */}
+            {/* MODALS */}
             <AddEditTransactionModal
                 open={openModal}
                 onClose={() => setOpenModal(false)}
                 txn={currentTxn}
+                onSuccess={fetchData} // Refresh list on save
             />
 
             <DeleteConfirmModal
                 open={!!deleteId}
                 onClose={() => setDeleteId(null)}
                 id={deleteId}
+                onSuccess={fetchData} // Refresh list on delete
             />
         </div>
     );

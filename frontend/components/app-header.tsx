@@ -20,12 +20,23 @@ import { useRouter } from "next/navigation";
 import { AppSidebar } from "./app-sidebar";
 import { SidebarMenuItems } from "./sidebar-menu";
 import { logout } from "@/utils/auth";
+import { AuthService } from "@/services/auth-service";
+import { toast } from "sonner";
 
 export function AppHeader() {
     const router = useRouter();
-    const handleLogout = () => {
-        logout();
-        router.push("/login"); // redirect user
+    const handleLogout = async () => {
+        try {
+            // 1. Call API
+            // The Backend remove the 'Set-Cookie' header here automatically.
+            await AuthService.logout();
+
+            // 3. Navigate
+            router.push("/login");
+
+        } catch (error: any) {
+            toast.error(error.message || "Invalid credentials");
+        }
     };
     return (
         <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 w-full">

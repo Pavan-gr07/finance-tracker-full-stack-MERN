@@ -72,31 +72,51 @@ exports.create = async (req, res) => {
 
 exports.list = async (req, res) => {
     try {
-        const { from, to } = req.query;
         const userId = req.userId;
 
         if (!userId) {
             return res.status(400).json({ error: 'userId is required' });
         }
 
-        const query = { userId };
 
-        if (from || to) {
-            query.date = {};
-            if (from) {
-                const fromDate = new Date(from);
-                if (isNaN(fromDate)) return res.status(400).json({ error: 'Invalid from date' });
-                query.date.$gte = fromDate;
-            }
-            if (to) {
-                const toDate = new Date(to);
-                if (isNaN(toDate)) return res.status(400).json({ error: 'Invalid to date' });
-                query.date.$lte = toDate;
-            }
-        }
+        // 2. Run List & Stats in Parallel (Performance Boost)
+        const [txns, statsResult] = await Promise.all([
+            // A. Get List (Using the query object!)
+            Transaction.find({ userId })
+                .sort({ date: -1 })
+                .limit(200),
 
-        const txns = await Transaction.find({ userId }).sort({ date: -1 }).limit(200);
-        res.json({ txns });
+            // B. Get Stats (Aggregated)
+            Transaction.aggregate([
+                { $match: { userId } }, // Use exact same filter
+                {
+                    $group: {
+                        _id: null,
+                        totalIncome: {
+                            $sum: { $cond: [{ $eq: ["$type", "income"] }, "$amount", 0] }
+                        },
+                        totalExpense: {
+                            $sum: { $cond: [{ $eq: ["$type", "expense"] }, "$amount", 0] }
+                        }
+                    }
+                }
+            ])
+        ]);
+
+        // 3. Format Stats
+        const statsData = statsResult[0] || { totalIncome: 0, totalExpense: 0 };
+        const stats = {
+            income: statsData.totalIncome,
+            expense: statsData.totalExpense,
+            balance: statsData.totalIncome - statsData.totalExpense
+        };
+
+        // 4. Return Combined Response
+        res.json({
+            txns,
+            stats
+        });
+
     } catch (err) {
         console.error('List Transactions Error:', err);
         res.status(500).json({ error: 'Internal server error' });

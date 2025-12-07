@@ -22,7 +22,20 @@ const PORT = process.env.PORT || 5000;
     console.log("✅ MongoDB Connected!");
 })();
 
-app.use(cors({ origin: "*", credentials: true }));
+// app.use(cors({ origin: "*", credentials: true }));
+const corsOptions = {
+    // 1. You MUST specify the exact Frontend URL here
+    //    If you deploy, change this to your production domain.
+    origin: 'http://localhost:3000',
+
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+
+    // 2. This allows the browser to send/receive the HttpOnly cookie
+    credentials: true,
+};
+app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
