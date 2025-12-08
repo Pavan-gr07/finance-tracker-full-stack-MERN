@@ -68,7 +68,7 @@ export default function LoginScreen() {
                     />
                 </div>
 
-                <button className="w-full py-2.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition" type="submit" disabled={loading}>
+                <button className="w-full py-2.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition cursor-pointer" type="submit" disabled={loading}>
                     {loading ? "Signing in..." : "Login"}
                 </button>
             </form>

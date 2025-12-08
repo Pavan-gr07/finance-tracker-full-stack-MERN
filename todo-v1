@@ -2,3 +2,18 @@ making list for category
 goals - analyses for the deadline
 do pagination for notifiaction and transaction
 while register only taking currany type
+
+1. The "Smart Nudge" (Toast Action)
+When a user adds their very first transaction in a category (e.g., "Food"), show a Toast with an action button.
+
+Scenario: User adds ₹500 for "Pizza" (Food). System: Saves Transaction. Toast Appears:
+
+"Transaction saved! 🍕 Want to set a monthly limit for Food?" [Set Budget] [Dismiss]
+
+2. The "Safety Net" Dashboard Card
+On your Dashboard, if the user has 0 Budgets, show a special "Warning Card" instead of an empty space.
+
+⚠️ You are flying without a safety net. You have spent ₹12,000 this month but have no limits set. [Create Your First Budget]
+
+3. The "Ghost" Progress Bar
+In your Transaction List, under the category badge, show a faint gray line. Hover Tooltip: "Set a budget to see your progress here."

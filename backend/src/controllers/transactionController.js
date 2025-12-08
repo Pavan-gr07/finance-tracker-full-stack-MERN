@@ -1,12 +1,15 @@
+const mongoose = require("mongoose");
 const Transaction = require('../models/transactionModel');
 const addBudgetJob = require('../workers/budgetWorkerAddJob');
 
 exports.create = async (req, res) => {
     try {
+        const userId = req.userId;
+        console.log(userId)
         const payload = req.body;
 
         // Basic validation
-        if (!payload.userId || !payload.amount) {
+        if (!userId || !payload.amount) {
             return res.status(400).json({ error: 'userId and amount are required' });
         }
 
@@ -49,6 +52,7 @@ exports.create = async (req, res) => {
 
         const txn = await Transaction.create({
             ...payload,
+            userId,
             isRecurring: !!payload.recurring,
             recurringConfig
         });
@@ -78,17 +82,21 @@ exports.list = async (req, res) => {
             return res.status(400).json({ error: 'userId is required' });
         }
 
-
-        // 2. Run List & Stats in Parallel (Performance Boost)
+        // 2. Run List & Stats in Parallel
         const [txns, statsResult] = await Promise.all([
-            // A. Get List (Using the query object!)
+            // A. Get List (Mongoose handles casting here automatically)
             Transaction.find({ userId })
                 .sort({ date: -1 })
                 .limit(200),
 
             // B. Get Stats (Aggregated)
             Transaction.aggregate([
-                { $match: { userId } }, // Use exact same filter
+                {
+                    $match: {
+                        // 3. FIX: Manually cast string to ObjectId for Aggregation
+                        userId: new mongoose.Types.ObjectId(userId)
+                    }
+                },
                 {
                     $group: {
                         _id: null,
@@ -104,7 +112,9 @@ exports.list = async (req, res) => {
         ]);
 
         // 3. Format Stats
+        // Handle case where user has 0 transactions (statsResult is empty array)
         const statsData = statsResult[0] || { totalIncome: 0, totalExpense: 0 };
+
         const stats = {
             income: statsData.totalIncome,
             expense: statsData.totalExpense,
@@ -171,7 +181,9 @@ exports.getFilters = async (req, res) => {
 exports.updateTransaction = async (req, res) => {
     try {
         const userId = req.userId;
-        const txnId = req.params.id;
+        const txnId = req.query.id;
+
+        console.log(txnId, "txnId")
 
         const updated = await Transaction.findOneAndUpdate(
             { _id: txnId, userId },
@@ -190,7 +202,7 @@ exports.updateTransaction = async (req, res) => {
 exports.deleteTransaction = async (req, res) => {
     try {
         const userId = req.userId;
-        const txnId = req.params.id;
+        const txnId = req.query.id;
 
         const deleted = await Transaction.findOneAndDelete({
             _id: txnId,

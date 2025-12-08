@@ -1,19 +1,18 @@
 export interface Transaction {
     _id: string;
+    userId: string;
     amount: number;
     currency: string;
     type: "income" | "expense";
     category: string;
-    date: string; // ISO string from backend
+    date: string;
     notes?: string;
     isRecurring: boolean;
     recurringConfig?: {
         frequency: "daily" | "weekly" | "monthly" | "yearly";
-        nextRunDate: string; // ISO string from backend
+        nextRunDate: string;
         isActive: boolean;
     };
-    linkedGoalId?: string;
-    balance: string;
-    stats?: Object;
-    txns?: Object;
+    linkedGoalId?: string | null;
+    createdAt: string;
 }

@@ -40,6 +40,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { CATEGORIES } from "@/data/static_data";
 
 // --- TYPES ---
 type ItemType = "budget" | "goal";
@@ -61,13 +62,7 @@ interface Goal {
     deadline: string; // ISO Date string
 }
 
-// Predefined Categories for the Dropdown
-const CATEGORIES = [
-    "Food & Dining", "Groceries", "Transport",
-    "Utilities", "Shopping", "Entertainment",
-    "Medical", "Personal Care", "Education",
-    "Travel", "Savings", "Investments"
-];
+
 
 export default function BudgetsGoalsScreen() {
     // --- STATE ---

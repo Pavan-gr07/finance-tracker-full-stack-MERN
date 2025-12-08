@@ -2,6 +2,8 @@ const jwt = require("jsonwebtoken");
 
 module.exports = (req, res, next) => {
     const token = req.cookies.finance_token;
+
+    console.log("Auth middleware - token:", token);
     if (!token) return res.status(401).json({ error: "Unauthorized" });
 
 

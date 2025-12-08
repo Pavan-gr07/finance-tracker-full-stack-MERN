@@ -22,7 +22,7 @@ export default function DeleteConfirmModal({ open, onClose, id, onSuccess }: Pro
 
         setIsLoading(true);
         try {
-            await TransactionService.delete();
+            await TransactionService.delete(id);
             toast.success("Transaction deleted");
             if (onSuccess) onSuccess();
             onClose();
@@ -43,11 +43,11 @@ export default function DeleteConfirmModal({ open, onClose, id, onSuccess }: Pro
                     </DialogDescription>
                 </DialogHeader>
 
-                <DialogFooter className="gap-2 sm:gap-0">
-                    <Button variant="outline" onClick={onClose} disabled={isLoading}>
+                <DialogFooter className="gap-2 sm:gap-2">
+                    <Button variant="outline" onClick={onClose} disabled={isLoading} className="cursor-pointer">
                         Cancel
                     </Button>
-                    <Button variant="destructive" onClick={handleDelete} disabled={isLoading}>
+                    <Button variant="destructive" onClick={handleDelete} disabled={isLoading} className="cursor-pointer">
                         {isLoading ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...

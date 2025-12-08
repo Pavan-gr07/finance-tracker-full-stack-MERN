@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 
 import { TransactionService } from "@/services/transaction-service"; // Import the service
 import type { Transaction } from "@/types/transaction";
+import { CATEGORIES } from "@/data/static_data";
 
 interface AddEditTransactionModalProps {
     open: boolean;
@@ -73,7 +74,7 @@ export default function AddEditTransactionModal({
             // Fetch goals for the dropdown (Mocking for now, replace with GoalService.getAll())
             setGoals([
                 { id: "6754a8b29c1d2e3f4a5b6c7d", name: "New Car Fund" },
-                { id: "goal_2", name: "Bali Trip" }
+                { id: "6754a8b29c1d2e3f4a5b6c7d", name: "Bali Trip" }
             ]);
 
             if (txn) {
@@ -128,8 +129,9 @@ export default function AddEditTransactionModal({
             // 3. Call API
             if (txn?._id) {
                 // UPDATE
-                await TransactionService.update(payload);
+                await TransactionService.update(txn?._id, payload);
                 toast.success("Transaction updated successfully");
+
             } else {
                 // CREATE
                 await TransactionService.create(payload);
@@ -169,7 +171,7 @@ export default function AddEditTransactionModal({
                         <button
                             onClick={() => setType("income")}
                             className={cn(
-                                "px-4 py-1.5 rounded-md text-sm font-medium transition-all",
+                                "px-4 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer",
                                 type === "income" ? "bg-white text-emerald-700 shadow-sm" : "text-white/70 hover:text-white"
                             )}
                         >
@@ -178,7 +180,7 @@ export default function AddEditTransactionModal({
                         <button
                             onClick={() => setType("expense")}
                             className={cn(
-                                "px-4 py-1.5 rounded-md text-sm font-medium transition-all",
+                                "px-4 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer",
                                 type === "expense" ? "bg-white text-rose-700 shadow-sm" : "text-white/70 hover:text-white"
                             )}
                         >
@@ -215,12 +217,9 @@ export default function AddEditTransactionModal({
                                     <SelectValue placeholder="Select..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Food">Food & Dining</SelectItem>
-                                    <SelectItem value="Transport">Transport</SelectItem>
-                                    <SelectItem value="Utilities">Utilities</SelectItem>
-                                    <SelectItem value="Shopping">Shopping</SelectItem>
-                                    <SelectItem value="Salary">Salary</SelectItem>
-                                    <SelectItem value="Savings">Savings / Investment</SelectItem>
+                                    {CATEGORIES.map(cat => (
+                                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -306,11 +305,11 @@ export default function AddEditTransactionModal({
                 </div>
 
                 <DialogFooter className="p-4 border-t bg-slate-50 dark:bg-slate-900/20">
-                    <Button variant="ghost" onClick={onClose} disabled={isLoading}>Cancel</Button>
+                    <Button variant="ghost" className="cursor-pointer" onClick={onClose} disabled={isLoading}>Cancel</Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={isLoading}
-                        className={type === 'income' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'}
+                        className={type === 'income' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700 cursor-pointer'}
                     >
                         {isLoading ? (
                             <>

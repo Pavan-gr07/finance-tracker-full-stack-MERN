@@ -1,4 +1,5 @@
 const Transaction = require('../models/transactionModel');
+const mongoose = require("mongoose");
 
 exports.analyticsController = async (req, res) => {
   try {
@@ -6,7 +7,7 @@ exports.analyticsController = async (req, res) => {
 
     // 1️⃣ SUMMARY: total income & expense
     const summary = await Transaction.aggregate([
-      { $match: { userId } },
+      { $match: { userId: new mongoose.Types.ObjectId(userId) } },
       {
         $group: {
           _id: "$type",
@@ -25,7 +26,7 @@ exports.analyticsController = async (req, res) => {
 
     // 2️⃣ LINE CHART: monthly spending (12 months)
     const last12Months = await Transaction.aggregate([
-      { $match: { userId } },
+      { $match: { userId: new mongoose.Types.ObjectId(userId) } },
       {
         $group: {
           _id: {
@@ -41,7 +42,7 @@ exports.analyticsController = async (req, res) => {
 
     // 3️⃣ CATEGORY CHART: category-wise spending
     const categoryChart = await Transaction.aggregate([
-      { $match: { userId, type: "expense" } },
+      { $match: { userId: new mongoose.Types.ObjectId(userId), type: "expense" } },
       {
         $group: {
           _id: "$category",
@@ -57,7 +58,7 @@ exports.analyticsController = async (req, res) => {
     start.setHours(0, 0, 0, 0);
 
     const thisMonth = await Transaction.aggregate([
-      { $match: { userId, date: { $gte: start } } },
+      { $match: { userId: new mongoose.Types.ObjectId(userId), date: { $gte: start } } },
       {
         $group: {
           _id: "$type",

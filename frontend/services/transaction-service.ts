@@ -1,6 +1,22 @@
 import apiClient from "@/lib/api-client";
 import { Transaction } from "@/types/transaction";
 
+// --- TYPES ---
+
+
+
+export interface TransactionStats {
+    income: number;
+    expense: number;
+    balance: number;
+}
+
+// The new response structure from your API
+export interface TransactionsAPIResponse {
+    txns: Transaction[];
+    stats: TransactionStats;
+}
+
 interface CreateTransactionPayload {
     amount: number;
     type: "income" | "expense";
@@ -17,16 +33,18 @@ interface TransactionFilters {
     type?: string;
 }
 
+// --- SERVICE ---
+
 export const TransactionService = {
 
     getAll: async (filters?: TransactionFilters) => {
-        const response = await apiClient.get<Transaction[]>("/transactions", { params: filters });
-        // FIX: Cast it because our interceptor already unwrapped the data
-        return response as unknown as Transaction[];
+        // We expect the new object structure { txns, stats }
+        const response = await apiClient.get<TransactionsAPIResponse>("/transactions", { params: filters });
+        return response as unknown as TransactionsAPIResponse;
     },
 
-    getById: async () => {
-        const response = await apiClient.get<Transaction>(`/transactions}`);
+    getById: async (id: string) => {
+        const response = await apiClient.get<Transaction>(`/transactions`);
         return response as unknown as Transaction;
     },
 
@@ -35,13 +53,18 @@ export const TransactionService = {
         return response as unknown as Transaction;
     },
 
-    update: async (data: Partial<CreateTransactionPayload>) => {
-        const response = await apiClient.put<Transaction>(`/transactions}`, data);
+    update: async (id: string, data: Partial<CreateTransactionPayload>) => {
+        // Sends request to: PUT /api/transactions?id=6753f...
+        const response = await apiClient.patch<Transaction>(
+            "/transactions",
+            data,
+            { params: { id } } // This adds ?id=... to the URL
+        );
         return response as unknown as Transaction;
     },
 
-    delete: async () => {
-        const response = await apiClient.delete(`/transactions}`);
+    delete: async (id: string) => {
+        const response = await apiClient.delete(`/transactions`, { params: { id } });
         return response as unknown as any;
     },
 
