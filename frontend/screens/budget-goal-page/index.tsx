@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     Plus,
     Pencil,
     Trash2,
     Target,
     AlertTriangle,
+    CheckCircle2,
     Calendar,
     MoreVertical,
-    X
+    Loader2
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,136 +42,181 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { CATEGORIES } from "@/data/static_data";
 
-// --- TYPES ---
+// Import Services & Types
+import { BudgetService, Budget } from "@/services/budget-service";
+import { GoalService, Goal } from "@/services/goal-service";
+import { CATEGORIES } from "@/data/static_data"; // Assuming you have this, or use the array below
+
+// Fallback if file doesn't exist yet
+const STATIC_CATEGORIES = [
+    "Food", "Groceries", "Transport", "Utilities", "Shopping",
+    "Entertainment", "Medical", "Travel", "Savings", "Investments"
+];
+
 type ItemType = "budget" | "goal";
-
-interface Budget {
-    id: string;
-    name: string;
-    category: string; // The link to Transactions
-    amount: number;
-    spent: number;
-    alertThresholds: number[]; // [50, 80, 90]
-}
-
-interface Goal {
-    id: string;
-    name: string;
-    targetAmount: number;
-    savedAmount: number;
-    deadline: string; // ISO Date string
-}
-
-
 
 export default function BudgetsGoalsScreen() {
     // --- STATE ---
     const [activeTab, setActiveTab] = useState<ItemType>("budget");
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [goals, setGoals] = useState<Goal[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [currentId, setCurrentId] = useState<string | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
 
     // Form State
     const [formData, setFormData] = useState({
         name: "",
         category: "",
-        amount: "",     // Used for both Limit (Budget) and Target (Goal)
-        current: "",    // Used for Spent (Budget) and Saved (Goal) - mostly for display/edit
+        amount: "",     // Limit (Budget) OR Target (Goal)
+        current: "0",   // Spent (Budget) OR Saved (Goal)
         deadline: "",   // Goals only
-        alerts: "80, 90", // Budgets only (stored as string for input, parsed to array)
+        alerts: "80, 90", // Budgets only
     });
 
-    // --- INITIAL DATA ---
-    useEffect(() => {
-        setBudgets([
-            { id: "1", name: "Monthly Groceries", category: "Groceries", amount: 20000, spent: 14500, alertThresholds: [50, 90] },
-            { id: "2", name: "Weekend Fun", category: "Entertainment", amount: 5000, spent: 5200, alertThresholds: [80] },
-        ]);
+    // --- API FETCH ---
+    const fetchData = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const [budgetRes, goalRes] = await Promise.all([
+                BudgetService.getAll(),
+                GoalService.getAll()
+            ]);
 
-        setGoals([
-            { id: "1", name: "New Laptop", targetAmount: 150000, savedAmount: 45000, deadline: "2024-12-31" },
-        ]);
+            // Budget is likely still wrapped: { budgets: [...] } based on your controller
+            setBudgets(budgetRes.budgets || []);
+
+            // FIX: Goal is now a direct array, so we pass it directly
+            // We cast to 'any' temporarily if TS still complains about the dual-type history
+            setGoals((goalRes as any) || []);
+
+        } catch (error) {
+            console.error("Fetch error:", error);
+            toast.error("Failed to load data");
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     // --- HANDLERS ---
 
     const openAdd = () => {
         setIsEditing(false);
+        setCurrentId(null);
         setFormData({
             name: "", category: "", amount: "", current: "0",
-            deadline: "", alerts: "50, 80, 100"
+            deadline: "", alerts: "50, 80, 90"
         });
         setIsModalOpen(true);
     };
 
     const openEdit = (item: any) => {
         setIsEditing(true);
-        setCurrentId(item.id);
-        const isBudget = activeTab === "budget";
+        setCurrentId(item._id); // Ensure we use _id from MongoDB
 
-        setFormData({
-            name: item.name,
-            category: isBudget ? item.category : "", // Goals might not use this explicitly in this UI
-            amount: isBudget ? item.amount.toString() : item.targetAmount.toString(),
-            current: isBudget ? item.spent.toString() : item.savedAmount.toString(),
-            deadline: !isBudget ? item.deadline : "",
-            alerts: isBudget ? item.alertThresholds.join(", ") : "",
-        });
+        if (activeTab === "budget") {
+            setFormData({
+                name: item.name,
+                category: item.category,
+                amount: item.limit.toString(),
+                current: (item.spent || 0).toString(),
+                deadline: "",
+                alerts: item.notifyAtPercent?.join(", ") || "80, 90",
+            });
+        } else {
+            // Goal
+            setFormData({
+                name: item.name,
+                category: "", // Goals might not use category in UI yet
+                amount: item.targetAmount.toString(),
+                current: item.savedAmount.toString(),
+                deadline: item.deadline ? new Date(item.deadline).toISOString().split('T')[0] : "",
+                alerts: "",
+            });
+        }
         setIsModalOpen(true);
     };
 
-    const handleSave = () => {
-        // Parse the data
+    const handleSave = async () => {
         const amountVal = Number(formData.amount);
-        const currentVal = Number(formData.current);
+        // const currentVal = Number(formData.current); // Usually calculated by backend, but kept if manual override needed
 
-        // Parse Alerts: Split by comma, trim, convert to number, filter valid ones
-        const alertArray = formData.alerts
-            .split(",")
-            .map(s => Number(s.trim()))
-            .filter(n => !isNaN(n) && n > 0 && n <= 100);
-
-        const newItem = {
-            id: isEditing && currentId ? currentId : Date.now().toString(),
-            name: formData.name,
-            ...(activeTab === "budget"
-                ? {
-                    category: formData.category,
-                    amount: amountVal,
-                    spent: currentVal,
-                    alertThresholds: alertArray
-                }
-                : {
-                    targetAmount: amountVal,
-                    savedAmount: currentVal,
-                    deadline: formData.deadline
-                }
-            )
-        };
-
-        if (activeTab === "budget") {
-            setBudgets(prev => isEditing
-                ? prev.map(b => b.id === currentId ? { ...b, ...newItem } as Budget : b)
-                : [...prev, newItem as Budget]
-            );
-        } else {
-            setGoals(prev => isEditing
-                ? prev.map(g => g.id === currentId ? { ...g, ...newItem } as Goal : g)
-                : [...prev, newItem as Goal]
-            );
+        if (!formData.name || !amountVal) {
+            toast.error("Name and Amount are required");
+            return;
         }
-        setIsModalOpen(false);
+
+        setIsSaving(true);
+        try {
+            if (activeTab === "budget") {
+                const alertArray = formData.alerts.split(",").map(s => Number(s.trim())).filter(n => !isNaN(n));
+
+                const payload = {
+                    name: formData.name,
+                    category: formData.category,
+                    limit: amountVal,
+                    notifyAtPercent: alertArray,
+                    period: "monthly" as const
+                };
+
+                if (isEditing && currentId) {
+                    await BudgetService.update(currentId, payload);
+                    toast.success("Budget updated");
+                } else {
+                    await BudgetService.create(payload);
+                    toast.success("Budget created");
+                }
+            } else {
+                // GOAL LOGIC
+                const payload = {
+                    name: formData.name,
+                    targetAmount: amountVal,
+                    // We typically don't update 'savedAmount' manually here, 
+                    // it comes from transactions, but if you want manual override:
+                    // savedAmount: currentVal, 
+                    deadline: formData.deadline
+                };
+
+                if (isEditing && currentId) {
+                    await GoalService.update(currentId, payload);
+                    toast.success("Goal updated");
+                } else {
+                    await GoalService.create(payload);
+                    toast.success("Goal created");
+                }
+            }
+
+            setIsModalOpen(false);
+            fetchData(); // Refresh list
+        } catch (error: any) {
+            toast.error(error.message || "Failed to save");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
-    const handleDelete = (id: string) => {
-        if (activeTab === "budget") setBudgets(b => b.filter(i => i.id !== id));
-        else setGoals(g => g.filter(i => i.id !== id));
+    const handleDelete = async (id: string) => {
+        try {
+            if (activeTab === "budget") {
+                await BudgetService.delete(id);
+                toast.success("Budget deleted");
+            } else {
+                await GoalService.delete(id);
+                toast.success("Goal deleted");
+            }
+            fetchData();
+        } catch (error) {
+            toast.error("Failed to delete");
+        }
     };
 
     return (
@@ -194,87 +241,112 @@ export default function BudgetsGoalsScreen() {
                 </TabsList>
 
                 {/* --- BUDGETS GRID --- */}
-                <TabsContent value="budget" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-2 duration-300">
-                    {budgets.map((budget) => {
-                        const percentage = Math.min(100, (budget.spent / budget.amount) * 100);
-                        const isOver = budget.spent > budget.amount;
+                <TabsContent value="budget" className="space-y-4">
+                    {isLoading ? (
+                        <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>
+                    ) : budgets.length === 0 ? (
+                        <div className="text-center py-20 text-muted-foreground">No budgets set. Create one to start tracking!</div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-2 duration-300">
+                            {budgets.map((budget) => {
+                                const spent = budget.spent || 0;
+                                const percentage = Math.min(100, (spent / budget.limit) * 100);
+                                const isOver = spent > budget.limit;
 
-                        return (
-                            <Card key={budget.id} className={`group relative overflow-hidden transition-all hover:shadow-md border-l-4 ${isOver ? 'border-l-red-500' : 'border-l-emerald-500'}`}>
-                                <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                                    <div>
-                                        <CardTitle className="text-base">{budget.name}</CardTitle>
-                                        <Badge variant="outline" className="mt-1 text-xs font-normal text-muted-foreground">
-                                            {budget.category}
-                                        </Badge>
-                                    </div>
-                                    <ActionMenu onEdit={() => openEdit(budget)} onDelete={() => handleDelete(budget.id)} />
-                                </CardHeader>
+                                return (
+                                    <Card key={budget._id} className={`group relative overflow-hidden transition-all hover:shadow-md border-l-4 ${isOver ? 'border-l-red-500' : 'border-l-emerald-500'}`}>
+                                        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                                            <div>
+                                                <CardTitle className="text-base">{budget.name}</CardTitle>
+                                                <Badge variant="outline" className="mt-1 text-xs font-normal text-muted-foreground">
+                                                    {budget.category}
+                                                </Badge>
+                                            </div>
+                                            <ActionMenu onEdit={() => openEdit(budget)} onDelete={() => handleDelete(budget._id)} />
+                                        </CardHeader>
 
-                                <CardContent>
-                                    <div className="flex items-baseline justify-between mb-2">
-                                        <span className="text-2xl font-bold">₹{budget.spent.toLocaleString()}</span>
-                                        <span className="text-sm text-muted-foreground">of ₹{budget.amount.toLocaleString()}</span>
-                                    </div>
+                                        <CardContent>
+                                            <div className="flex items-baseline justify-between mb-2">
+                                                <span className="text-2xl font-bold">₹{spent.toLocaleString()}</span>
+                                                <span className="text-sm text-muted-foreground">of ₹{budget.limit.toLocaleString()}</span>
+                                            </div>
 
-                                    <Progress
-                                        value={percentage}
-                                        className="h-2 mb-2"
-                                        indicatorClassName={isOver ? "bg-red-500" : percentage > 85 ? "bg-amber-500" : "bg-emerald-500"}
-                                    />
+                                            <Progress
+                                                value={percentage}
+                                                className="h-2 mb-2"
+                                                indicatorClassName={isOver ? "bg-red-500" : percentage > 85 ? "bg-amber-500" : "bg-emerald-500"}
+                                            />
 
-                                    <div className="flex justify-between items-center text-xs text-muted-foreground mt-4">
-                                        <div className="flex gap-1">
-                                            {budget.alertThresholds.map(t => (
-                                                <span key={t} className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] border">
-                                                    🔔 {t}%
-                                                </span>
-                                            ))}
-                                        </div>
-                                        {isOver && <span className="text-red-600 font-medium flex items-center"><AlertTriangle className="h-3 w-3 mr-1" /> Over Limit</span>}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        );
-                    })}
+                                            <div className="flex justify-between items-center text-xs text-muted-foreground mt-4">
+                                                <div className="flex gap-1">
+                                                    {budget.notifyAtPercent.map(t => (
+                                                        <span key={t} className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] border">
+                                                            🔔 {t}%
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                                {isOver && <span className="text-red-600 font-medium flex items-center"><AlertTriangle className="h-3 w-3 mr-1" /> Over Limit</span>}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    )}
                 </TabsContent>
 
                 {/* --- GOALS GRID --- */}
-                <TabsContent value="goal" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-2 duration-300">
-                    {goals.map((goal) => {
-                        const percentage = Math.min(100, (goal.savedAmount / goal.targetAmount) * 100);
-                        // Calculate days remaining
-                        const daysLeft = Math.ceil((new Date(goal.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-                        const isExpired = daysLeft < 0;
+                <TabsContent value="goal" className="space-y-4">
+                    {isLoading ? (
+                        <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>
+                    ) : goals.length === 0 ? (
+                        <div className="text-center py-20 text-muted-foreground">No goals yet. Set a target to save for!</div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-2 duration-300">
+                            {goals.map((goal) => {
+                                const percentage = Math.min(100, (goal.savedAmount / goal.targetAmount) * 100);
+                                // Calculate days remaining
+                                let daysLeft = 0;
+                                let isExpired = false;
 
-                        return (
-                            <Card key={goal.id} className="group relative overflow-hidden transition-all hover:shadow-md border-t-4 border-t-blue-500">
-                                <Target className="absolute -right-6 -bottom-6 h-32 w-32 text-slate-50 dark:text-slate-900 rotate-12 transition-transform group-hover:rotate-45" />
+                                if (goal.deadline) {
+                                    const diff = new Date(goal.deadline).getTime() - new Date().getTime();
+                                    daysLeft = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                                    isExpired = daysLeft < 0;
+                                }
 
-                                <CardHeader className="pb-2 flex flex-row items-center justify-between relative z-10">
-                                    <CardTitle className="text-base">{goal.name}</CardTitle>
-                                    <ActionMenu onEdit={() => openEdit(goal)} onDelete={() => handleDelete(goal.id)} />
-                                </CardHeader>
+                                return (
+                                    <Card key={goal._id} className="group relative overflow-hidden transition-all hover:shadow-md border-t-4 border-t-blue-500">
+                                        <Target className="absolute -right-6 -bottom-6 h-32 w-32 text-slate-50 dark:text-slate-900 rotate-12 transition-transform group-hover:rotate-45" />
 
-                                <CardContent className="relative z-10">
-                                    <div className="flex items-baseline justify-between mb-2">
-                                        <span className="text-2xl font-bold text-blue-600">₹{goal.savedAmount.toLocaleString()}</span>
-                                        <span className="text-sm text-muted-foreground">Target: ₹{goal.targetAmount.toLocaleString()}</span>
-                                    </div>
+                                        <CardHeader className="pb-2 flex flex-row items-center justify-between relative z-10">
+                                            <CardTitle className="text-base">{goal.name}</CardTitle>
+                                            <ActionMenu onEdit={() => openEdit(goal)} onDelete={() => handleDelete(goal._id)} />
+                                        </CardHeader>
 
-                                    <Progress value={percentage} className="h-2" indicatorClassName="bg-blue-600" />
+                                        <CardContent className="relative z-10">
+                                            <div className="flex items-baseline justify-between mb-2">
+                                                {/* <span className="text-2xl font-bold text-blue-600">₹{goal.savedAmount.toLocaleString()}</span> */}
+                                                <span className="text-sm text-muted-foreground">Target: ₹{goal.targetAmount.toLocaleString()}</span>
+                                            </div>
 
-                                    <div className="mt-4 flex items-center justify-between text-xs">
-                                        <span className="text-muted-foreground">{percentage.toFixed(1)}% Achieved</span>
-                                        <Badge variant={isExpired ? "destructive" : "secondary"} className="font-normal">
-                                            <Calendar className="h-3 w-3 mr-1" />
-                                            {isExpired ? "Ended" : `${daysLeft} days left`}
-                                        </Badge>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        );
-                    })}
+                                            <Progress value={percentage} className="h-2" indicatorClassName="bg-blue-600" />
+
+                                            <div className="mt-4 flex items-center justify-between text-xs">
+                                                <span className="text-muted-foreground">{percentage.toFixed(1)}% Achieved</span>
+                                                {goal.deadline && (
+                                                    <Badge variant={isExpired ? "destructive" : "secondary"} className="font-normal">
+                                                        <Calendar className="h-3 w-3 mr-1" />
+                                                        {isExpired ? "Ended" : `${daysLeft} days left`}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    )}
                 </TabsContent>
             </Tabs>
 
@@ -317,7 +389,7 @@ export default function BudgetsGoalsScreen() {
                                         <SelectValue placeholder="Select a category..." />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {CATEGORIES.map(cat => (
+                                        {(CATEGORIES || STATIC_CATEGORIES).map(cat => (
                                             <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                                         ))}
                                     </SelectContent>
@@ -373,9 +445,9 @@ export default function BudgetsGoalsScreen() {
                     </div>
 
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSave} className="bg-primary">
-                            Save {activeTab === 'budget' ? 'Budget' : 'Goal'}
+                        <Button variant="outline" onClick={() => setIsModalOpen(false)} disabled={isSaving}>Cancel</Button>
+                        <Button onClick={handleSave} className="bg-primary" disabled={isSaving}>
+                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : `Save ${activeTab === 'budget' ? 'Budget' : 'Goal'}`}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

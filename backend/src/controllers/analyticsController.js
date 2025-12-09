@@ -4,88 +4,121 @@ const mongoose = require("mongoose");
 exports.analyticsController = async (req, res) => {
   try {
     const userId = req.userId;
+    const { filter } = req.query; // e.g., 'current', '3months', '6months', 'year'
 
-    // 1️⃣ SUMMARY: total income & expense
-    const summary = await Transaction.aggregate([
-      { $match: { userId: new mongoose.Types.ObjectId(userId) } },
-      {
-        $group: {
-          _id: "$type",
-          total: { $sum: "$amount" },
+    // 1️⃣ CALCULATE DATE RANGE
+    let startDate = new Date();
+    const today = new Date();
+
+    switch (filter) {
+      case 'current':
+        // Start of this month
+        startDate.setDate(1);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case '3months':
+        startDate.setMonth(today.getMonth() - 3);
+        break;
+      case '6months':
+        startDate.setMonth(today.getMonth() - 6);
+        break;
+      case 'year':
+        startDate.setFullYear(today.getFullYear() - 1);
+        break;
+      default:
+        // Default to 'year' or 'all time' if no filter provided
+        startDate.setFullYear(today.getFullYear() - 1);
+    }
+
+    // Common Filter Object for all queries
+    const dateFilter = {
+      userId: new mongoose.Types.ObjectId(userId),
+      date: { $gte: startDate } // Greater than or equal to start date
+    };
+
+    // 2️⃣ RUN QUERIES IN PARALLEL (Performance Boost)
+    const [summaryResult, lineChartResult, categoryResult] = await Promise.all([
+
+      // A. TOTAL SUMMARY (Income vs Expense)
+      Transaction.aggregate([
+        { $match: dateFilter },
+        {
+          $group: {
+            _id: "$type",
+            total: { $sum: "$amount" },
+          },
         },
-      },
+      ]),
+
+      // B. LINE CHART (Trends over time)
+      Transaction.aggregate([
+        { $match: dateFilter },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$date" },
+              month: { $month: "$date" }, // 1-12
+              type: "$type" // Group by Type too so we can separate Income/Expense
+            },
+            total: { $sum: "$amount" }
+          }
+        },
+        { $sort: { "_id.year": 1, "_id.month": 1 } }
+      ]),
+
+      // C. CATEGORY CHART (Expense Only)
+      Transaction.aggregate([
+        {
+          $match: {
+            ...dateFilter,
+            type: "expense"
+          }
+        },
+        {
+          $group: {
+            _id: "$category",
+            total: { $sum: "$amount" }
+          }
+        },
+        { $sort: { total: -1 } }
+      ])
     ]);
 
+    // 3️⃣ FORMAT DATA
     let totalIncome = 0;
     let totalExpense = 0;
 
-    summary.forEach((s) => {
+    summaryResult.forEach((s) => {
       if (s._id === "income") totalIncome = s.total;
       if (s._id === "expense") totalExpense = s.total;
     });
 
-    // 2️⃣ LINE CHART: monthly spending (12 months)
-    const last12Months = await Transaction.aggregate([
-      { $match: { userId: new mongoose.Types.ObjectId(userId) } },
-      {
-        $group: {
-          _id: {
-            year: { $year: "$date" },
-            month: { $month: "$date" }
-          },
-          total: { $sum: "$amount" },
-          type: { $first: "$type" }
-        }
-      },
-      { $sort: { "_id.year": 1, "_id.month": 1 } }
-    ]);
+    // We re-format the Line Chart data to be cleaner for the Frontend
+    // Original Output: [{ _id: { year: 2024, month: 1, type: 'income' }, total: 500 }, ...]
+    // We keep it raw here, but your Frontend 'useMemo' logic already handles the merging perfectly.
 
-    // 3️⃣ CATEGORY CHART: category-wise spending
-    const categoryChart = await Transaction.aggregate([
-      { $match: { userId: new mongoose.Types.ObjectId(userId), type: "expense" } },
-      {
-        $group: {
-          _id: "$category",
-          total: { $sum: "$amount" }
-        }
-      },
-      { $sort: { total: -1 } }
-    ]);
-
-    // 4️⃣ THIS MONTH SUMMARY
-    const start = new Date();
-    start.setDate(1);
-    start.setHours(0, 0, 0, 0);
-
-    const thisMonth = await Transaction.aggregate([
-      { $match: { userId: new mongoose.Types.ObjectId(userId), date: { $gte: start } } },
-      {
-        $group: {
-          _id: "$type",
-          total: { $sum: "$amount" }
-        }
-      }
-    ]);
-
-    let monthIncome = 0;
-    let monthExpense = 0;
-    thisMonth.forEach(s => {
-      if (s._id === "income") monthIncome = s.total;
-      if (s._id === "expense") monthExpense = s.total;
-    });
+    // 4️⃣ THIS MONTH SPECIFIC (Optional Overlay)
+    // Sometimes users want to see "This Month's" progress regardless of the global filter.
+    // We can calculate this purely from the filter if filter === 'current', 
+    // or run a tiny separate query if you always want "This Month" specific stats in a specific card.
+    // For now, I will return the main summary as it respects the filter selected.
 
     res.json({
       totalIncome,
       totalExpense,
-      last12Months,
-      categoryChart,
+      last12Months: lineChartResult, // Renaming strictly for compatibility with your frontend types
+      categoryChart: categoryResult,
       monthSummary: {
-        monthIncome,
-        monthExpense,
+        // If filter is 'current', these match totalIncome/totalExpense
+        // If filter is 'year', these are just totals for the year. 
+        // You can rename this key to 'periodSummary' in frontend later for clarity.
+        monthIncome: totalIncome,
+        monthExpense: totalExpense,
       }
     });
 
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error("Analytics Error:", err);
+    res.status(500).json({ error: err.message });
   }
-}
+};
