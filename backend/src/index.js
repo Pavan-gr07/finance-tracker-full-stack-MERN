@@ -13,7 +13,7 @@ const analyticsRoutes = require("./routes/analyticsRoutes");
 const goalRoutes = require("./routes/goalRoutes");
 
 const app = express();
-const PORT = process.env.PORT || 6000;
+const PORT = process.env.PORT || 5000;
 
 // Connect Mongo
 (async () => {

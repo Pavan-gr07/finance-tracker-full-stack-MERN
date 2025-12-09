@@ -5,6 +5,7 @@ const budgetSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     name: { type: String, required: true },
     category: { type: String },
+    spentAmount: { type: Number, default: 0 },
     limit: { type: Number, required: true },
     period: { type: String, enum: ['monthly', 'weekly', 'daily'], default: 'monthly' },
     startDate: { type: Date, default: Date.now },

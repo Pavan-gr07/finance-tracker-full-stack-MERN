@@ -29,7 +29,7 @@ export const GoalService = {
     },
 
     update: async (id: string, data: Partial<Goal>) => {
-        const response = await apiClient.put(`/goals/${id}`, data);
+        const response = await apiClient.patch(`/goals/${id}`, data);
         return response;
     },
 

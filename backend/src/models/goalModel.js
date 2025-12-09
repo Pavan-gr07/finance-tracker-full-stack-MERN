@@ -3,11 +3,11 @@ const mongoose = require("mongoose");
 const goalSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, required: true },
 
-    title: { type: String, required: true },
+    name: { type: String, required: true },
     description: { type: String },
 
     targetAmount: { type: Number, required: true },
-    currentAmount: { type: Number, default: 0 },
+    savedAmount: { type: Number, default: 0 },
 
     deadline: { type: Date, required: true },
     category: { type: String },
