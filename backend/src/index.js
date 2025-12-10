@@ -67,6 +67,9 @@ app.get("/test-cookie", (req, res) => {
 // This tells Node to run the worker code alongside the server
 // Make sure your worker.js exports nothing or just runs on load
 require('./workers/budgetProcessor');
+require('./workers/cron/recurringProcessor');
+require('./workers/cron/smartNotifications');
+
 
 app.listen(PORT, () => {
     console.log(`🚀 API Server running at port ${PORT}`);

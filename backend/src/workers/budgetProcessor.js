@@ -1,6 +1,6 @@
 require("dotenv").config();
 const { Worker } = require("bullmq");
-const IORedis = require("ioredis"); // <--- CHANGE 1: Import ioredis
+const redisClient = require("../config/redis");
 const connectDB = require("../config/db");
 const Transaction = require("../models/transactionModel");
 const Budget = require("../models/budgetModel");
@@ -9,13 +9,7 @@ const Notification = require("../models/notificationModel");
 (async () => {
     await connectDB();
 
-    // <--- CHANGE 2: Create a dedicated connection for the Worker
-    const connection = new IORedis(process.env.REDIS_URL, {
-        maxRetriesPerRequest: null, // Mandatory for BullMQ
-        tls: {
-            rejectUnauthorized: false // Mandatory for Upstash
-        }
-    });
+
 
     const worker = new Worker(
         "budget-queue",
@@ -55,13 +49,33 @@ const Notification = require("../models/notificationModel");
                 const percentUsed = Math.round((totalSpent / budget.limit) * 100);
 
                 console.log(`📊 Budget: ${budget.category} | Used: ${percentUsed}%`);
-
-                // Check thresholds
-                for (const threshold of budget.notifyAtPercent) {
+                const sortedThresholds = budget.notifyAtPercent.sort((a, b) => b - a);
+                for (const threshold of sortedThresholds) {
                     if (percentUsed >= threshold) {
-                        // Logic to prevent duplicate alerts should ideally go here
-                        // e.g., check if we already alerted for this threshold this month
 
+                        // 1. CHECK DATABASE: Did we already send an alert for this specific budget & threshold this month?
+                        // (You need a way to track this. For now, let's assume you just want to avoid 3 alerts in one go)
+
+                        console.log(`Checking threshold: ${threshold}%`);
+
+                        // Check if a notification for this budget & threshold exists for the current month
+                        const startOfMonth = new Date();
+                        startOfMonth.setDate(1);
+                        startOfMonth.setHours(0, 0, 0, 0);
+
+                        const existingAlert = await Notification.findOne({
+                            userId: userId,
+                            "payload.budgetId": budget._id,
+                            "payload.percent": { $gte: threshold }, // Check if we already alerted for this tier or higher
+                            createdAt: { $gte: startOfMonth }
+                        });
+
+                        if (existingAlert) {
+                            console.log(`🔕 Alert already sent for ${threshold}% or higher this month. Skipping.`);
+                            break; // Stop checking lower thresholds
+                        }
+
+                        // 2. Create the Notification
                         await Notification.create({
                             userId,
                             type: "budget_alert",
@@ -70,15 +84,21 @@ const Notification = require("../models/notificationModel");
                                 limit: budget.limit,
                                 spent: totalSpent,
                                 percent: percentUsed,
+                                thresholdMet: threshold
                             },
                         });
-                        console.log(`🔔 Alert Sent: ${percentUsed}% used`);
+
+                        console.log(`🔔 Alert Sent for exceeding ${threshold}%`);
+
+                        // 3. IMPORTANT: Break the loop!
+                        // We found the highest exceeded threshold. We don't need to alert for 80% and 50% too.
+                        break;
                     }
                 }
             }
         },
         {
-            connection: connection // <--- CHANGE 3: Use the ioredis connection
+            connection: redisClient // <--- CHANGE 3: Use the ioredis connection
         }
     );
 

@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const Transaction = require('../models/transactionModel');
 const addBudgetJob = require('../workers/budgetWorkerAddJob');
+const Goal = require("../models/goalModel");
+const Budget = require("../models/budgetModel");
 
 exports.create = async (req, res) => {
     try {
@@ -56,6 +58,29 @@ exports.create = async (req, res) => {
             isRecurring: !!payload.recurring,
             recurringConfig
         });
+
+        // 3. ⚡ THE MAGIC PART: Update the Goal
+        // If this is a Savings transaction and linked to a goal, add the money to the goal
+        if (payload.category === 'Savings' && payload.linkedGoalId) {
+            await Goal.findByIdAndUpdate(
+                payload.linkedGoalId,
+                {
+                    $inc: { savedAmount: payload.amount } // $inc atomically adds the amount
+                },
+                { new: true }
+            );
+            console.log(`💰 Added ${payload.amount} to Goal ${payload.linkedGoalId}`);
+        }
+        // if (payload.type === 'expense') {
+        //     await Budget.findByIdAndUpdate(
+        //         payload.linkedBudgetId,
+        //         {
+        //             $inc: { spentAmount: payload.amount } // $inc atomically adds the amount
+        //         },
+        //         { new: true }
+        //     );
+        //     console.log(`💰 Added ${payload.amount} to Goal ${payload.linkedBudgetId}`);
+        // }
         // Push job
         // Wrap in try/catch or handle specifically if job failure shouldn't block response
         try {
@@ -74,6 +99,70 @@ exports.create = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+exports.updateTransaction = async (req, res) => {
+    try {
+        const { id } = req.query;
+        const { amount, category, type, linkedGoalId, date, notes, recurring } = req.body;
+
+        // 1. Fetch the EXISTING transaction (Before update)
+        const oldTxn = await Transaction.findById(id);
+        if (!oldTxn) {
+            return res.status(404).json({ message: 'Transaction not found' });
+        }
+
+        // --- STEP 1: REVERT OLD IMPACT ---
+        // If the old transaction was contributing to a goal, REMOVE that money first.
+        if (oldTxn.category === 'Savings' && oldTxn.linkedGoalId) {
+            await Goal.findByIdAndUpdate(oldTxn.linkedGoalId, {
+                $inc: { savedAmount: -oldTxn.amount } // Subtract OLD amount
+            });
+        }
+        // if (oldTxn.type === 'expense' && oldTxn.linkedBudgetId) {
+        //     await Goal.findByIdAndUpdate(oldTxn.linkedBudgetId, {
+        //         $inc: { spentAmount: -oldTxn.amount } // Subtract OLD amount
+        //     });
+        // }
+
+        // --- STEP 2: UPDATE TRANSACTION ---
+        // Now update the transaction record itself
+        const updatedTxn = await Transaction.findByIdAndUpdate(
+            id,
+            { amount, category, type, linkedGoalId, date, notes, recurringConfig: recurring },
+            { new: true } // Return the updated document
+        );
+
+        // --- STEP 3: APPLY NEW IMPACT ---
+        // If the NEW transaction is Savings and has a goal, ADD the new money.
+        // We check 'updatedTxn' here to ensure we use the fresh data.
+        if (updatedTxn.category === 'Savings' && updatedTxn.linkedGoalId) {
+            await Goal.findByIdAndUpdate(updatedTxn.linkedGoalId, {
+                $inc: { savedAmount: updatedTxn.amount } // Add NEW amount
+            });
+        }
+        // if (updatedTxn.type === 'expense' && updatedTxn.linkedBudgetId) {
+        //     await Goal.findByIdAndUpdate(updatedTxn.linkedBudgetId, {
+        //         $inc: { spentAmount: updatedTxn.amount } // Add NEW amount
+        //     });
+        // }
+
+        // Push job
+        // Wrap in try/catch or handle specifically if job failure shouldn't block response
+        try {
+            console.log("add job")
+            await addBudgetJob(txn);
+        } catch (jobError) {
+            console.error('Budget Job Error:', jobError);
+        }
+
+        res.status(200).json(updatedTxn);
+
+    } catch (error) {
+        console.error("Update Transaction Error:", error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 
 exports.list = async (req, res) => {
     try {
@@ -179,26 +268,7 @@ exports.getFilters = async (req, res) => {
 
 
 
-exports.updateTransaction = async (req, res) => {
-    try {
-        const userId = req.userId;
-        const txnId = req.query.id;
 
-        console.log(txnId, "txnId")
-
-        const updated = await Transaction.findOneAndUpdate(
-            { _id: txnId, userId },
-            req.body,
-            { new: true }
-        );
-
-        if (!updated) return res.status(404).json({ error: "Transaction not found" });
-
-        res.json(updated);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
-};
 
 exports.deleteTransaction = async (req, res) => {
     try {

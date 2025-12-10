@@ -12,6 +12,7 @@ const transactionSchema = new mongoose.Schema({
     // --- 🔗 GOAL LINKING (New) ---
     // Only used if type='expense' (transfer to savings) or 'income'
     linkedGoalId: { type: mongoose.Schema.Types.ObjectId, ref: "Goal", default: null },
+    linkedBudgetId: { type: mongoose.Schema.Types.ObjectId, ref: "Budget", default: null },
 
     // --- 🔄 RECURRING CONFIG ---
     isRecurring: { type: Boolean, default: false },

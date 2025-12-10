@@ -27,6 +27,10 @@ const connectDB = require("../config/db");
         },
         { connection: redisClient }
     );
+    // Listen for events to debug
+    worker.on('ready', () => console.log("✅ Worker is connected and ready!"));
+    worker.on('failed', (job, err) => console.log(`❌ Job ${job.id} failed:`, err));
+    worker.on('error', err => console.error("❌ Worker Error:", err));
 
     console.log("Notification Worker Running...");
 })();

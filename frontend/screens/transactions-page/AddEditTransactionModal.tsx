@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils";
 import { TransactionService } from "@/services/transaction-service"; // Import the service
 import type { Transaction } from "@/types/transaction";
 import { CATEGORIES } from "@/data/static_data";
+import { GoalService } from "@/services/goal-service";
 
 interface AddEditTransactionModalProps {
     open: boolean;
@@ -62,20 +63,23 @@ export default function AddEditTransactionModal({
 
     // Goal Linking State
     const [linkedGoalId, setLinkedGoalId] = useState<string>("");
-    const [goals, setGoals] = useState<{ id: string, name: string }[]>([]);
+    const [goals, setGoals] = useState<{ _id: string, name: string }[]>([]);
 
     // Recurring State
     const [isRecurring, setIsRecurring] = useState(false);
     const [frequency, setFrequency] = useState("monthly");
 
+    console.log(goals, "kjk")
+
     // Load Data on Open
     useEffect(() => {
+
+        const getData = async () => {
+            const response = await GoalService.getAll();
+            setGoals(response);
+        };
         if (open) {
             // Fetch goals for the dropdown (Mocking for now, replace with GoalService.getAll())
-            setGoals([
-                { id: "6754a8b29c1d2e3f4a5b6c7d", name: "New Car Fund" },
-                { id: "6754a8b29c1d2e3f4a5b6c7d", name: "Bali Trip" }
-            ]);
 
             if (txn) {
                 // Edit Mode
@@ -101,6 +105,7 @@ export default function AddEditTransactionModal({
                 setFrequency("monthly");
             }
         }
+        getData();
     }, [txn, open]);
 
     const handleSubmit = async () => {
@@ -150,6 +155,17 @@ export default function AddEditTransactionModal({
         }
     };
 
+
+    const filteredCategories = CATEGORIES.filter(cat => {
+        if (type === 'expense') {
+            // If expense, HIDE 'Savings' and 'Investments'
+            return cat !== 'Savings' && cat !== 'Investments';
+        }
+        // Optional: If you also want to hide 'Salary' when type is expense, add it here
+        // return cat !== 'Salary'; 
+
+        return true; // Show everything else
+    });
     return (
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden gap-0">
@@ -217,7 +233,7 @@ export default function AddEditTransactionModal({
                                     <SelectValue placeholder="Select..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {CATEGORIES.map(cat => (
+                                    {filteredCategories.map(cat => (
                                         <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                                     ))}
                                 </SelectContent>
@@ -246,7 +262,7 @@ export default function AddEditTransactionModal({
                                 </SelectTrigger>
                                 <SelectContent>
                                     {goals.map(goal => (
-                                        <SelectItem key={goal.id} value={goal.id}>
+                                        <SelectItem key={goal._id} value={goal._id}>
                                             {goal.name}
                                         </SelectItem>
                                     ))}

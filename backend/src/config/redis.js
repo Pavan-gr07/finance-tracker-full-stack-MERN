@@ -1,16 +1,18 @@
+// config/redisBull.js
+require('dotenv').config();
+const IORedis = require('ioredis');
 
-const IORedis = require('ioredis'); // <--- Import ioredis
-
-// 1. Create a dedicated connection for BullMQ
-// We use the same REDIS_URL but must configure it for Upstash + BullMQ
-const redisClient = new IORedis(process.env.REDIS_URL, {
-    // CRITICAL: BullMQ will crash without this
+const connection = new IORedis(process.env.REDIS_URL, {
+    // 1. Mandatory for BullMQ to avoid crashes
     maxRetriesPerRequest: null,
 
-    // CRITICAL: Required for Upstash (Secure connection)
+    // 2. Required for Upstash (Secure connection)
     tls: {
         rejectUnauthorized: false
     }
 });
 
-module.exports = redisClient;
+connection.on('error', (err) => console.error('❌ BullMQ Redis Error:', err.message));
+connection.on('connect', () => console.log('✅ BullMQ Redis Connected'));
+
+module.exports = connection;
