@@ -59,6 +59,7 @@ exports.create = async (req, res) => {
         // Push job
         // Wrap in try/catch or handle specifically if job failure shouldn't block response
         try {
+            console.log("add job")
             await addBudgetJob(txn);
         } catch (jobError) {
             console.error('Budget Job Error:', jobError);

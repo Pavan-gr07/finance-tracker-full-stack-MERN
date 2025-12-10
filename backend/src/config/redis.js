@@ -1,13 +1,16 @@
-const IORedis = require("ioredis");
 
-const redisClient = new IORedis({
-    host: process.env.REDIS_HOST || "127.0.0.1",
-    port: process.env.REDIS_PORT || 6379,
-    password: process.env.REDIS_PASSWORD || undefined,
+const IORedis = require('ioredis'); // <--- Import ioredis
 
-    // REQUIRED FOR BULLMQ
+// 1. Create a dedicated connection for BullMQ
+// We use the same REDIS_URL but must configure it for Upstash + BullMQ
+const redisClient = new IORedis(process.env.REDIS_URL, {
+    // CRITICAL: BullMQ will crash without this
     maxRetriesPerRequest: null,
-    enableReadyCheck: false,
+
+    // CRITICAL: Required for Upstash (Secure connection)
+    tls: {
+        rejectUnauthorized: false
+    }
 });
 
 module.exports = redisClient;

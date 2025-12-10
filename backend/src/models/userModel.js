@@ -10,7 +10,9 @@ const userSchema = new mongoose.Schema({
         currency: { type: String, default: 'INR' },
         timezone: { type: String, default: 'Asia/Kolkata' },
         notificationPrefs: { type: Object, default: { push: true, email: true } }
-    }
+    },
+    profilePicture: { type: String },
+    bio: { type: String },
 }, { timestamps: true });
 
 

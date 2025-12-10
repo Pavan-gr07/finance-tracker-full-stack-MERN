@@ -11,6 +11,7 @@ const budgetRoutes = require("./routes/budgetRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const goalRoutes = require("./routes/goalRoutes");
+const userProfileRoutes = require("./routes/userProfileRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -47,6 +48,7 @@ app.use("/api/budgets", budgetRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/dashboard", analyticsRoutes);
 app.use("/api/goals", goalRoutes);
+app.use("/api/user", userProfileRoutes);
 
 app.get("/", (req, res) => {
     res.send("Finance Tracker API is running...");
@@ -60,6 +62,11 @@ app.get("/test-cookie", (req, res) => {
     res.send("Cookie set");
 });
 
+
+// --- 3. THE MAGIC LINE: Start the Worker Here ---
+// This tells Node to run the worker code alongside the server
+// Make sure your worker.js exports nothing or just runs on load
+require('./workers/budgetProcessor');
 
 app.listen(PORT, () => {
     console.log(`🚀 API Server running at port ${PORT}`);

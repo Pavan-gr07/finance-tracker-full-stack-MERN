@@ -60,34 +60,38 @@ export default function DashboardScreen() {
     const areaChartData = useMemo(() => {
         if (!stats?.last12Months) return [];
 
-        // Create a map to group by "Year-Month"
         const monthMap = new Map<string, { month: string, income: number, expense: number, sortKey: number }>();
 
         stats.last12Months.forEach(item => {
             const key = `${item._id.year}-${item._id.month}`;
 
             if (!monthMap.has(key)) {
-                // Convert month number (1-12) to short name (Jan, Feb)
-                const date = new Date(item._id.year, item._id.month - 1); // JS months are 0-11
+                const date = new Date(item._id.year, item._id.month - 1);
                 const monthName = date.toLocaleString('default', { month: 'short' });
 
                 monthMap.set(key, {
                     month: monthName,
                     income: 0,
                     expense: 0,
-                    sortKey: date.getTime() // For sorting chronologically
+                    sortKey: date.getTime()
                 });
             }
 
             const entry = monthMap.get(key)!;
-            if (item.type === 'income') entry.income = item.total;
-            else entry.expense = item.total;
+
+            // --- FIX IS HERE ---
+            // Access type via item._id.type
+            const type = item._id.type;
+
+            if (type === 'income') {
+                entry.income += item.total; // Use += to accumulate
+            } else {
+                entry.expense += item.total;
+            }
         });
 
-        // Convert Map to Array and Sort by Date
         return Array.from(monthMap.values()).sort((a, b) => a.sortKey - b.sortKey);
     }, [stats]);
-
     // 2. Process Pie Chart (Add Colors)
     const pieChartData = useMemo(() => {
         if (!stats?.categoryChart) return [];
@@ -161,7 +165,7 @@ export default function DashboardScreen() {
                     className="text-rose-600"
                 />
                 <StatsCard
-                    title="This Month"
+                    title="This Month Savings"
                     value={`₹${((stats?.monthSummary.monthIncome || 0) - (stats?.monthSummary.monthExpense || 0)).toLocaleString()}`}
                     trend="Active"
                     trendUp={true}

@@ -52,7 +52,3 @@ exports.login = async (req, res) => {
     }
 };
 
-exports.logout = async (req, res) => {
-    res.clearCookie("finance_token");
-    res.json({ message: "Logged out" });
-};

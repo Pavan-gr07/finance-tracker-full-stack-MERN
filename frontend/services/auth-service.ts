@@ -43,7 +43,7 @@ export const AuthService = {
     logout: async () => {
         try {
             // 1. Tell the server to delete the HttpOnly cookie
-            await apiClient.post("/auth/logout");
+            await apiClient.post("/user/logout");
         } catch (err) {
             console.error("Logout failed", err);
         } finally {
