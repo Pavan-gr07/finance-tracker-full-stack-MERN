@@ -40,13 +40,17 @@ exports.login = async (req, res) => {
 
         const token = generateToken(user);
 
-        res.cookie("finance_token", token, {
-            httpOnly: true,
-            secure: true,        // Cookie only sent over HTTPS
-            sameSite: 'none',
-            maxAge: 7 * 24 * 60 * 60 * 1000
+        // res.cookie("finance_token", token, {
+        //     httpOnly: true,
+        //     secure: true,        // Cookie only sent over HTTPS
+        //     sameSite: 'none',
+        //     maxAge: 7 * 24 * 60 * 60 * 1000
+        // });
+        res.status(200).json({
+            message: "Login successful",
+            token: token,
+            user
         });
-        res.json({ user });
 
     } catch (err) {
         res.status(400).json({ error: err.message });

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { isValidToken } from "@/utils/auth";
+import Cookies from "js-cookie";
 import { toast } from "sonner";
 import { AuthService } from "@/services/auth-service";
 
@@ -22,13 +23,18 @@ export default function LoginScreen() {
         try {
             // 1. Call API
             // The Backend sets the 'Set-Cookie' header here automatically.
-            await AuthService.login(formData);
+            const response = await AuthService.login(formData);
+            if (response?.token) {
+                localStorage.setItem("finance_token", response.token);
+                // Since frontend sets this, it works perfectly on Vercel
+                Cookies.set("finance_token", response.token, { expires: 7 });
+                // 3. Success Message
+                toast.success(`Welcome back, ${response.user.name || "User"}!`);
 
-            // 2. Success
-            toast.success(`Welcome back!`); // Result might not have name depending on your API
-
-            // 3. Navigate
-            router.push("/dashboard");
+                // 4. Navigate
+                // The axios interceptor will now pick up the token automatically for the dashboard calls
+                router.push("/dashboard");
+            }
 
         } catch (error: any) {
             toast.error(error.message || "Invalid credentials");

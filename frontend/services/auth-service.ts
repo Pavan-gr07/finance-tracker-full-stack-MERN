@@ -11,6 +11,7 @@ export interface User {
 
 export interface AuthResponse {
     user: User;
+    token: string;
 }
 
 export interface LoginPayload {
@@ -35,9 +36,7 @@ export const AuthService = {
 
     // 2. LOGIN
     login: async (data: LoginPayload) => {
-        const response = await apiClient.post<AuthResponse>("/auth/login", data);
-
-        return response;
+        return await apiClient.post<AuthResponse>('/auth/login', data) as unknown as AuthResponse;
     },
 
     logout: async () => {
