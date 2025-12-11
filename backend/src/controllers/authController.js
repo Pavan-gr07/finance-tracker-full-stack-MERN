@@ -42,8 +42,8 @@ exports.login = async (req, res) => {
 
         res.cookie("finance_token", token, {
             httpOnly: true,
-            secure: false,  // true on HTTPS
-            sameSite: "lax",
+            secure: true,        // Cookie only sent over HTTPS
+            sameSite: 'none',
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
         res.json({ user });

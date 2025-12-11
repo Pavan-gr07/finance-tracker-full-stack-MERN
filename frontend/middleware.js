@@ -10,6 +10,9 @@ export function middleware(request) {
         return NextResponse.redirect(new URL("/login", request.url));
     }
 
+    console.log(token, "tokenm-----")
+    console.log(isPublic, "isPublic-----")
+
     if (token && isPublic) {
         return NextResponse.redirect(new URL("/dashboard", request.url));
     }
