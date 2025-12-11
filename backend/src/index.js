@@ -16,6 +16,9 @@ const userProfileRoutes = require("./routes/userProfileRoutes");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// 👇 ADD THIS LINE. IT IS REQUIRED FOR RENDER/VERCEL COOKIES
+app.set('trust proxy', 1);
+
 // Connect Mongo
 (async () => {
     console.log("⏳ Connecting to MongoDB...");
