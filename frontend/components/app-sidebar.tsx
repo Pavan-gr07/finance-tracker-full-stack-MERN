@@ -27,7 +27,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href="/">
+                            <div>
                                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                                     <Command className="size-4" />
                                 </div>
@@ -35,7 +35,7 @@ export function AppSidebar() {
                                     <span className="truncate font-bold">FinanceTracker</span>
                                     <span className="truncate text-xs">Enterprise</span>
                                 </div>
-                            </Link>
+                            </div>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>

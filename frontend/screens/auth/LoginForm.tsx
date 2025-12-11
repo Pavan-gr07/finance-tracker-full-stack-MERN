@@ -80,7 +80,7 @@ export default function LoginScreen() {
             </form>
 
             {/* Social Login */}
-            <div className="my-6">
+            {/* <div className="my-6">
                 <div className="flex items-center gap-2 mb-4">
                     <div className="h-px bg-border flex-1" />
                     <span className="text-muted-foreground text-sm">OR</span>
@@ -97,7 +97,7 @@ export default function LoginScreen() {
                     />
                     Continue with Google
                 </button>
-            </div>
+            </div> */}
 
             {/* Link to register */}
             <p className="text-center text-sm mt-4">
