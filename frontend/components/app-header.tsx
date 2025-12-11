@@ -17,9 +17,8 @@ import {
 } from "@/components/ui/sheet"
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useRouter } from "next/navigation";
-import { AppSidebar } from "./app-sidebar";
+import Cookies from "js-cookie";
 import { SidebarMenuItems } from "./sidebar-menu";
-import { logout } from "@/utils/auth";
 import { AuthService } from "@/services/auth-service";
 import { toast } from "sonner";
 
@@ -29,8 +28,9 @@ export function AppHeader() {
         try {
             // 1. Call API
             // The Backend remove the 'Set-Cookie' header here automatically.
-            await AuthService.logout();
-
+            Cookies.remove("finance_token"); // Remove the token cookie
+            localStorage.removeItem("finance_token"); // Remove from LS just in case
+            localStorage.removeItem("finance_user");
             // 3. Navigate
             router.push("/login");
 
