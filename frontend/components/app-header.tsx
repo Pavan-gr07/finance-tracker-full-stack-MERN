@@ -21,8 +21,12 @@ import Cookies from "js-cookie";
 import { SidebarMenuItems } from "./sidebar-menu";
 import { AuthService } from "@/services/auth-service";
 import { toast } from "sonner";
+import { useEffect, useState } from "react";
+import { UserProfile, UserService } from "@/services/user-service";
 
 export function AppHeader() {
+    const [userData, setUserdata] = useState<UserProfile | null>(null);
+
     const router = useRouter();
     const handleLogout = async () => {
         try {
@@ -38,6 +42,16 @@ export function AppHeader() {
             toast.error(error.message || "Invalid credentials");
         }
     };
+
+    useEffect(() => {
+        const getData = async () => {
+            const response = await UserService.getProfile();
+            setUserdata(response);
+        };
+        getData();
+    }, []);
+
+
     return (
         <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 w-full">
             {/* Desktop Sidebar Trigger */}
@@ -108,14 +122,13 @@ export function AppHeader() {
                                 <User2 className="h-5 w-5" />
                             </div>
                             <div className="flex flex-col space-y-1">
-                                <p className="text-sm font-medium">Username</p>
-                                <p className="text-xs text-muted-foreground">user@example.com</p>
+                                <p className="text-sm font-medium">{userData?.name}</p>
+                                <p className="text-xs text-muted-foreground">{userData?.email}</p>
                             </div>
                         </div>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>Profile</DropdownMenuItem>
-                        <DropdownMenuItem>Settings</DropdownMenuItem>
-                        <DropdownMenuItem>Billing</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => { router.push('/profile') }}>Profile</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => { router.push('/profile') }}>Settings</DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem className="text-red-500 font-medium focus:text-red-500" onClick={handleLogout}>
                             Log out
