@@ -13,7 +13,7 @@ const transport = Nodemailer.createTransport(
 );
 
 const SENDER = {
-  address: "support@demomailtrap.co", // Or your verified sender
+  address: "support@pavangr.xyz", // Or your verified sender
   name: "Finance Tracker",
 };
 
@@ -73,7 +73,6 @@ exports.sendWelcomeEmail = async (email, name) => {
         <div class="container">
           
           <div class="header">
-             <img src="${iconUrl}" alt="Welcome" style="width: 50px; height: 50px; display: block; margin: 0 auto;">
              <h2 style="color: #ffffff; margin: 10px 0 0 0;">Welcome Aboard!</h2>
           </div>
 
