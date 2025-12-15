@@ -5,6 +5,9 @@ const connectDB = require("../config/db");
 const Transaction = require("../models/transactionModel");
 const Budget = require("../models/budgetModel");
 const Notification = require("../models/notificationModel");
+const User = require('../models/userModel');
+const { sendBudgetAlert } = require("../services/mail-connect");
+
 
 (async () => {
     await connectDB();
@@ -25,6 +28,8 @@ const Notification = require("../models/notificationModel");
 
             // Get budgets for this user
             const budgets = await Budget.find({ userId });
+            const user = await User.findById(userId).select("-password");
+            console.log(user, "user")
 
             for (const budget of budgets) {
 
@@ -88,6 +93,13 @@ const Notification = require("../models/notificationModel");
                             },
                         });
 
+                        sendBudgetAlert(
+                            user.email,
+                            user.name,
+                            budget.category, // Budget Name
+                            totalSpent,    // Spent
+                            budget.limit  // Limit
+                        );
                         console.log(`🔔 Alert Sent for exceeding ${threshold}%`);
 
                         // 3. IMPORTANT: Break the loop!

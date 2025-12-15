@@ -41,5 +41,14 @@ export const NotificationService = {
     markAllRead: async () => {
         const response = await apiClient.put("/notifications/read", { id: 'all' });
         return response;
+    },
+    deleteNotification: async (selectedIds: any) => {
+        // 1. Notice the structure: { data: { ids: ... } }
+        // 2. Also ensure the key 'ids' matches what your backend expects (req.body.ids)
+        const response = await apiClient.delete("/notifications", {
+            data: { selectedIds: selectedIds }
+        });
+
+        return response;
     }
 };

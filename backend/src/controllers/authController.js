@@ -1,30 +1,47 @@
 const User = require('../models/userModel');
 const bcrypt = require('bcryptjs');
 const { generateToken } = require("../utils/jwt");
+const { sendWelcomeEmail } = require('../services/mail-connect');
 
 exports.register = async (req, res) => {
     try {
         const { name, email, password } = req.body;
 
+        // 1. Check if user exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ error: "Email already in use" });
         }
 
-
+        // 2. Hash password
         const hashed = await bcrypt.hash(password, 10);
 
+        // 3. Create User
         const user = await User.create({
             name,
             email,
             password: hashed,
         });
 
+        // 4. Generate Token
         const token = generateToken(user);
 
-        res.json({ user, token });
+        // 5. Send Welcome Email (Asynchronous)
+        // We don't await this because we don't want to make the user wait 
+        // for the email to send before they get logged in.
+        // It runs in the background.
+        sendWelcomeEmail(user.email, user.name);
+
+        // 6. Send Response
+        res.status(201).json({
+            message: "User registered successfully",
+            user: { id: user._id, name: user.name, email: user.email }, // Don't send back the password!
+            token
+        });
+
     } catch (err) {
-        res.status(400).json({ error: err.message });
+        console.error("Registration Error:", err);
+        res.status(500).json({ error: "Internal Server Error" });
     }
 };
 

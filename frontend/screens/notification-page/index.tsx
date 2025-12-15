@@ -60,9 +60,7 @@ export default function NotificationHistoryScreen() {
         }
     };
 
-    useEffect(() => {
-        fetchNotifications();
-    }, []);
+
 
     // --- FILTERING & GROUPING ---
     const filteredData = useMemo(() => {
@@ -94,6 +92,14 @@ export default function NotificationHistoryScreen() {
             setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
         } catch (e) { toast.error("Failed to update"); }
     };
+    const handleDelete = async () => {
+        try {
+            await NotificationService.deleteNotification(selectedIds);
+            toast.success("Deleted Successfully");
+            setSelectedIds([])
+            fetchNotifications();
+        } catch (e) { toast.error("Failed to update"); }
+    };
 
     const handleBulkRead = async () => {
         // In a real app, send array of IDs to backend. For now, we simulate or iterate.
@@ -113,6 +119,11 @@ export default function NotificationHistoryScreen() {
     const toggleSelect = (id: string) => {
         setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
     };
+
+    useEffect(() => {
+        fetchNotifications();
+    }, []);
+
 
     if (loading) return <div className="flex h-[80vh] items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
@@ -169,7 +180,7 @@ export default function NotificationHistoryScreen() {
                         <Button size="sm" variant="secondary" onClick={handleBulkRead}>
                             <CheckCheck className="mr-2 h-3 w-3" /> Mark Read
                         </Button>
-                        <Button size="sm" variant="destructive">
+                        <Button size="sm" variant="destructive" onClick={handleDelete}>
                             <Trash2 className="mr-2 h-3 w-3" /> Delete
                         </Button>
                     </div>
@@ -310,9 +321,6 @@ function ExpandableNotificationCard({ item, isSelected, onToggle, onRead }: { it
                                 <p className="text-xs text-muted-foreground">No additional details.</p>
                             )}
 
-                            <div className="pt-2 flex gap-2">
-                                <Button size="sm" variant="secondary" className="text-xs h-7">View Related Record</Button>
-                            </div>
                         </div>
                     </div>
                 </CollapsibleContent>

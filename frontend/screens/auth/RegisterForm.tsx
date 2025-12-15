@@ -36,8 +36,9 @@ export default function RegisterScreen() {
             });
             // 2. Success
             toast.success(`Account created successfully!`);
-        } catch (error) {
-            setError("Registration failed. Please try again.");
+        } catch (error: any) {
+            toast.error(error.message || "Registration failed. Please try again.");
+            setError(error?.message);
             return;
         }
 

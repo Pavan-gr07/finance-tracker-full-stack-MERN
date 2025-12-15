@@ -100,3 +100,37 @@ exports.markRead = async (req, res) => {
         res.status(400).json({ error: err.message });
     }
 };
+
+exports.deleteNotification = async (req, res) => {
+    try {
+        // Expect 'selectedIds' to be an array: ["64f...", "64e..."]
+        const { selectedIds } = req.body;
+        const userId = req.userId;
+
+        // 1. Basic Validation
+        if (!selectedIds || !Array.isArray(selectedIds) || selectedIds.length === 0) {
+            return res.status(400).json({ error: "An array of selectedIds is required" });
+        }
+
+        // 2. Use deleteMany with the $in operator
+        // This says: Delete any document where _id is IN the list AND userId matches
+        const result = await Notification.deleteMany({
+            _id: { $in: selectedIds },
+            userId: userId
+        });
+
+        // 3. Check if anything was actually deleted
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ error: "No notifications found to delete" });
+        }
+
+        // 4. Return success with count
+        res.json({
+            message: "Notifications deleted",
+            deletedCount: result.deletedCount
+        });
+
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+};
