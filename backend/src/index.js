@@ -12,6 +12,7 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const goalRoutes = require("./routes/goalRoutes");
 const userProfileRoutes = require("./routes/userProfileRoutes");
+const serverless = require('serverless-http');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -73,6 +74,25 @@ require('./workers/cron/recurringProcessor');
 require('./workers/cron/smartNotifications');
 
 
-app.listen(PORT, () => {
-    console.log(`🚀 API Server running at port ${PORT}`);
+// app.listen(PORT, () => {
+//     console.log(`🚀 API Server running at port ${PORT}`);
+// });
+
+// For Serverless
+// Export the app as a serverless function
+module.exports.handler = serverless(app, {
+    request: (req, event, context) => {
+        if (Buffer.isBuffer(req.body)) {
+            try {
+                const str = req.body.toString();
+                // Only parse if it starts with { or [
+                if (str.trim().startsWith('{') || str.trim().startsWith('[')) {
+                    req.body = JSON.parse(str);
+                }
+            } catch (err) {
+                console.error("❌ Failed to parse request body:", err.message);
+                req.body = {}; // fallback to avoid crashing
+            }
+        }
+    }
 });

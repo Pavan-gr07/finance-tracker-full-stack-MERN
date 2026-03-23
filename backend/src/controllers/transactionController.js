@@ -61,16 +61,16 @@ exports.create = async (req, res) => {
 
         // 3. ⚡ THE MAGIC PART: Update the Goal
         // If this is a Savings transaction and linked to a goal, add the money to the goal
-        if (payload.category === 'Savings' && payload.linkedGoalId) {
-            await Goal.findByIdAndUpdate(
-                payload.linkedGoalId,
-                {
-                    $inc: { savedAmount: payload.amount } // $inc atomically adds the amount
-                },
-                { new: true }
-            );
-            console.log(`💰 Added ${payload.amount} to Goal ${payload.linkedGoalId}`);
-        }
+        // if (payload.category === 'Savings' && payload.linkedGoalId) {
+        //     await Goal.findByIdAndUpdate(
+        //         payload.linkedGoalId,
+        //         {
+        //             $inc: { savedAmount: payload.amount } // $inc atomically adds the amount
+        //         },
+        //         { new: true }
+        //     );
+        //     console.log(`💰 Added ${payload.amount} to Goal ${payload.linkedGoalId}`);
+        // }
         // if (payload.type === 'expense') {
         //     await Budget.findByIdAndUpdate(
         //         payload.linkedBudgetId,
@@ -83,12 +83,12 @@ exports.create = async (req, res) => {
         // }
         // Push job
         // Wrap in try/catch or handle specifically if job failure shouldn't block response
-        try {
-            console.log("add job")
-            await addBudgetJob(txn);
-        } catch (jobError) {
-            console.error('Budget Job Error:', jobError);
-        }
+        // try {
+        //     console.log("add job")
+        //     await addBudgetJob(txn);
+        // } catch (jobError) {
+        //     console.error('Budget Job Error:', jobError);
+        // }
 
         res.status(201).json({ txn });
     } catch (err) {
@@ -148,12 +148,12 @@ exports.updateTransaction = async (req, res) => {
 
         // Push job
         // Wrap in try/catch or handle specifically if job failure shouldn't block response
-        try {
-            console.log("add job")
-            await addBudgetJob(txn);
-        } catch (jobError) {
-            console.error('Budget Job Error:', jobError);
-        }
+        // try {
+        //     console.log("add job")
+        //     // await addBudgetJob(txn);
+        // } catch (jobError) {
+        //     console.error('Budget Job Error:', jobError);
+        // }
 
         res.status(200).json(updatedTxn);
 
